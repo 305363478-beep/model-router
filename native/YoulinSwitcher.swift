@@ -631,7 +631,7 @@ struct ThreadRow: View {
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 10)
-        .background(Color.white.opacity(0.6))
+        .background(Design.row)
         .overlay(Rectangle().frame(height: 1).foregroundColor(Design.stroke), alignment: .bottom)
     }
 }
@@ -925,12 +925,13 @@ struct FlowLayout<Content: View>: View {
 // MARK: - Design System
 
 enum Design {
-    static let bg = Color(red: 0.965, green: 0.965, blue: 0.952)
-    static let sidebar = Color(red: 0.942, green: 0.942, blue: 0.925)
-    static let panel = Color.white.opacity(0.82)
-    static let code = Color(red: 0.925, green: 0.927, blue: 0.912)
-    static let chip = Color(red: 0.905, green: 0.905, blue: 0.895)
-    static let stroke = Color.black.opacity(0.08)
+    static let bg = Color(nsColor: .windowBackgroundColor)
+    static let sidebar = Color(nsColor: .underPageBackgroundColor)
+    static let panel = Color(nsColor: .controlBackgroundColor)
+    static let code = Color(nsColor: .textBackgroundColor)
+    static let chip = Color(nsColor: .quaternaryLabelColor).opacity(0.22)
+    static let row = Color(nsColor: .textBackgroundColor).opacity(0.72)
+    static let stroke = Color(nsColor: .separatorColor).opacity(0.55)
     static let accent = Color(red: 0.075, green: 0.455, blue: 0.925)
 }
 
