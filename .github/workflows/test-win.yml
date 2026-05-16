@@ -51,6 +51,26 @@ jobs:
           if ((Get-Content router/bin/router-ui.js -Raw) -match 'win32') { Write-Host "PASS: win32 branch" }
           else { throw "FAIL: missing win32" }
 
+      - name: Setup mock Codex config
+        shell: pwsh
+        run: |
+          $codexDir = Join-Path $env:USERPROFILE ".codex"
+          New-Item -ItemType Directory -Force -Path $codexDir | Out-Null
+          @"
+          model = "gpt-5.5"
+          model_reasoning_effort = "medium"
+
+          [model_providers.openai]
+          name = "OpenAI"
+          base_url = "https://api.openai.com/v1"
+          wire_api = "responses"
+          requires_openai_auth = true
+          request_max_retries = 1
+          "@ | Out-File -FilePath (Join-Path $codexDir "config.toml") -Encoding utf8
+
+          New-Item -ItemType Directory -Force -Path (Join-Path $codexDir "sessions") | Out-Null
+          Write-Host "Mock .codex created at $codexDir"
+
       - name: Start server + smoke test
         run: |
           Start-Process -NoNewWindow -FilePath "node" -ArgumentList "router/bin/router-ui.js","--port","8787"
@@ -68,6 +88,25 @@ jobs:
       - uses: actions/setup-node@v4
         with: { node-version: '20' }
 
+      - name: Setup mock Codex config
+        shell: pwsh
+        run: |
+          $codexDir = Join-Path $env:USERPROFILE ".codex"
+          New-Item -ItemType Directory -Force -Path $codexDir | Out-Null
+          New-Item -ItemType Directory -Force -Path (Join-Path $codexDir "sessions") | Out-Null
+          @"
+          model = "gpt-5.5"
+          model_reasoning_effort = "medium"
+
+          [model_providers.openai]
+          name = "OpenAI"
+          base_url = "https://api.openai.com/v1"
+          wire_api = "responses"
+          requires_openai_auth = true
+          request_max_retries = 1
+          "@ | Out-File -FilePath (Join-Path $codexDir "config.toml") -Encoding utf8
+          Write-Host "Mock .codex ready"
+
       - name: Install Playwright
         run: |
           npm init -y --silent
@@ -79,7 +118,7 @@ jobs:
           Start-Process -NoNewWindow -FilePath "node" -ArgumentList "router/bin/router-ui.js","--port","8787"
           for ($i=0; $i -lt 10; $i++) {
             try { Invoke-WebRequest "http://127.0.0.1:8787/api/status" -UseBasicParsing -TimeoutSec 2 | Out-Null; Write-Host "Server UP"; break }
-            catch { Start-Sleep 1 }
+            catch { Write-Host "Waiting..."; Start-Sleep 1 }
           }
 
       - name: Run Playwright UI tests

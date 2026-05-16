@@ -38,9 +38,9 @@ export async function savePolicy(policy) {
 export async function ensureDefaultConfig(projectRoot) {
   await ensureDir(configDir());
   const root = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
-  const modelsSrc = path.join(root, "examples", "models.yaml");
-  const policySrc = path.join(root, "examples", "policy.yaml");
-  const secretsSrc = path.join(root, "examples", "secrets.env.example");
+  const modelsSrc = path.join(root, "config", "models.yaml.example");
+  const policySrc = path.join(root, "config", "policy.yaml.example");
+  const secretsSrc = path.join(root, "config", "secrets.env.example");
 
   const targets = [
     [modelsSrc, path.join(configDir(), "models.yaml")],
