@@ -18,7 +18,7 @@ mkdir "%ROUTER_DIR%\logs" 2>nul
 echo 正在复制文件...
 xcopy /E /Y "router\bin\*" "%ROUTER_DIR%\app\bin\"
 xcopy /E /Y "router\lib\*" "%ROUTER_DIR%\app\lib\"
-copy /Y "router\codex-mcp.json" "%ROUTER_DIR%\"
+copy /Y "router\codex-mcp.json" "%ROUTER_DIR%"
 
 if not exist "%ROUTER_DIR%\config\models.yaml" copy /Y "router\config\models.yaml.example" "%ROUTER_DIR%\config\models.yaml"
 if not exist "%ROUTER_DIR%\config\policy.yaml" copy /Y "router\config\policy.yaml.example" "%ROUTER_DIR%\config\policy.yaml"
@@ -31,13 +31,14 @@ echo ========================================
 echo.
 echo 下一步：
 echo   1. 编辑 %ROUTER_DIR%\config\secrets.env 添加 API Key
-echo   2. 双击 启动Youlin.bat 启动服务
-echo   3. 浏览器访问 http://127.0.0.1:8787/
-echo   4. 设置: http://127.0.0.1:8787/settings
-echo   5. 迁移: http://127.0.0.1:8787/migrate
+echo   2. 双击 启动Youlin.bat 启动 Youlin 桌面应用
+echo   3. 应用会自动以独立窗口打开
 echo.
-echo 切换 Codex 模型:
-echo   在 Settings 页面选择模型，点击 Use in Codex
-echo   然后完全退出并重新打开 Codex
+echo 功能：
+echo   - 供应商 Tab: 添加模型、配置 API Key、快速切换
+echo   - 线程迁移 Tab: 跨模型迁移聊天记录
+echo   - 左侧栏: 当前配置状态、一键切换预设
+echo.
+echo 切换 Codex 模型后需完全退出并重新打开 Codex。
 echo.
 pause

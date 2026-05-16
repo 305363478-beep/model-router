@@ -1,0 +1,816 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Youlin - Codex Model Switcher</title>
+<style>
+/* ========== DESIGN SYSTEM ========== */
+:root {
+  --bg: #f6f6f3;
+  --sidebar-bg: #f0f0ec;
+  --panel: rgba(255,255,255,0.82);
+  --code: #ecece8;
+  --chip: #e7e7e4;
+  --stroke: rgba(0,0,0,0.08);
+  --accent: #1374ec;
+  --accent-hover: #0f5fcc;
+  --text: #1a1a1a;
+  --text-secondary: #6b6b6b;
+  --radius: 10px;
+  --font: -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft YaHei", sans-serif;
+  --font-mono: "SF Mono", "Cascadia Code", "Consolas", monospace;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: var(--font);
+  background: var(--bg);
+  color: var(--text);
+  display: flex;
+  height: 100vh;
+  overflow: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ========== SIDEBAR ========== */
+.sidebar {
+  width: 300px;
+  min-width: 300px;
+  background: var(--sidebar-bg);
+  display: flex;
+  flex-direction: column;
+  padding: 20px;
+  gap: 18px;
+  border-right: 1px solid var(--stroke);
+}
+
+.sidebar-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.sidebar-logo {
+  width: 42px; height: 42px;
+  background: var(--accent);
+  border-radius: 12px;
+  display: flex; align-items: center; justify-content: center;
+  color: #fff; font-size: 22px; font-weight: 700;
+  flex-shrink: 0;
+}
+
+.sidebar-title { font-size: 24px; font-weight: 700; }
+.sidebar-sub { font-size: 12px; font-weight: 500; color: var(--text-secondary); }
+
+.sidebar-section {
+  padding: 14px;
+  background: var(--panel);
+  border-radius: 16px;
+  border: 1px solid var(--stroke);
+}
+
+.sidebar-section-label {
+  font-size: 13px; font-weight: 600; color: var(--text-secondary);
+  margin-bottom: 10px;
+}
+
+.sidebar-current {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  background: var(--code);
+  padding: 12px;
+  border-radius: 10px;
+  white-space: pre-wrap;
+  max-height: 200px;
+  overflow-y: auto;
+  user-select: all;
+}
+
+.quick-switch-btn {
+  display: flex; align-items: center; gap: 12px;
+  padding: 10px;
+  background: var(--panel);
+  border: 1px solid var(--stroke);
+  border-radius: 13px;
+  cursor: pointer; user-select: none;
+  transition: background 0.15s;
+}
+.quick-switch-btn:hover { background: rgba(19,116,236,0.06); }
+.quick-switch-icon {
+  width: 28px; height: 28px;
+  background: var(--accent);
+  border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.quick-switch-icon svg { width: 14px; height: 14px; color: #fff; }
+.quick-switch-info { flex: 1; }
+.quick-switch-name { font-size: 13px; font-weight: 600; }
+.quick-switch-desc { font-size: 11px; color: var(--text-secondary); }
+
+.sidebar-bottom {
+  margin-top: auto;
+  display: flex; flex-direction: column; gap: 8px;
+}
+.sidebar-hint { font-size: 12px; color: var(--text-secondary); }
+
+/* ========== MAIN CONTENT ========== */
+.main {
+  flex: 1;
+  display: flex; flex-direction: column;
+  min-width: 0;
+}
+
+.tab-bar {
+  display: flex;
+  padding: 12px 28px 0;
+  gap: 4px;
+}
+
+.tab-btn {
+  display: flex; align-items: center; gap: 6px;
+  padding: 10px 18px;
+  border-radius: 8px;
+  border: none; background: none;
+  cursor: pointer;
+  font-family: var(--font);
+  font-size: 13px; font-weight: 500;
+  color: var(--text-secondary);
+  transition: all 0.15s;
+}
+.tab-btn.active {
+  background: rgba(19,116,236,0.1);
+  color: var(--accent);
+  font-weight: 600;
+}
+.tab-btn:hover:not(.active) { color: var(--text); }
+
+.tab-divider {
+  height: 1px;
+  background: var(--stroke);
+  margin: 0 28px;
+}
+
+.tab-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 28px;
+}
+
+/* ========== PROVIDER TAB ========== */
+.provider-header {
+  display: flex; justify-content: space-between; align-items: flex-start;
+  margin-bottom: 22px;
+}
+.provider-header h2 { font-size: 24px; font-weight: 600; }
+.provider-header p { font-size: 13px; color: var(--text-secondary); margin-top: 4px; }
+
+.card {
+  padding: 18px;
+  background: var(--panel);
+  border-radius: 18px;
+  border: 1px solid var(--stroke);
+  margin-bottom: 22px;
+}
+
+.card-label { font-size: 14px; font-weight: 600; margin-bottom: 12px; }
+
+.preset-chips {
+  display: flex; flex-wrap: wrap; gap: 10px;
+}
+.chip {
+  display: flex; align-items: center; gap: 6px;
+  padding: 9px 16px;
+  border-radius: 11px;
+  border: none; cursor: pointer;
+  font-family: var(--font); font-size: 14px; font-weight: 500;
+  background: var(--chip);
+  color: var(--text);
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+.chip.active { background: var(--accent); color: #fff; }
+.chip .chip-star { font-size: 9px; color: #f5a623; }
+.chip.active .chip-star { color: #ffd700; }
+.chip:hover:not(.active) { background: #dcdcd8; }
+
+.provider-preview {
+  display: flex; align-items: center; gap: 18px;
+  margin-bottom: 0;
+}
+.provider-avatar {
+  width: 86px; height: 86px;
+  background: var(--code);
+  border-radius: 18px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 34px; font-weight: 600;
+  color: var(--accent);
+  flex-shrink: 0;
+}
+.provider-preview-name { font-size: 22px; font-weight: 600; }
+.provider-preview-note { color: var(--text-secondary); margin-top: 6px; }
+
+.form-row {
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 18px;
+}
+.form-row.single { grid-template-columns: 1fr; }
+
+.field {
+  display: flex; flex-direction: column; gap: 8px;
+}
+.field label { font-size: 14px; font-weight: 600; }
+.field input {
+  padding: 8px 12px;
+  border: 1px solid #d1d1d1;
+  border-radius: 8px;
+  font-family: var(--font); font-size: 13px;
+  background: #fff; color: var(--text);
+  transition: border-color 0.15s;
+}
+.field input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px rgba(19,116,236,0.15);
+}
+.field input::placeholder { color: #aaa; }
+
+.toggle-row {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 8px;
+}
+.toggle-row label { font-size: 14px; font-weight: 600; }
+
+.toggle {
+  position: relative; width: 44px; height: 24px;
+  background: #ccc; border-radius: 12px; cursor: pointer;
+  transition: background 0.2s;
+}
+.toggle.on { background: var(--accent); }
+.toggle::after {
+  content: ''; position: absolute;
+  top: 2px; left: 2px;
+  width: 20px; height: 20px;
+  background: #fff; border-radius: 50%;
+  transition: transform 0.2s;
+}
+.toggle.on::after { transform: translateX(20px); }
+
+.btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 0 14px; height: 34px;
+  border-radius: 8px; border: none; cursor: pointer;
+  font-family: var(--font); font-size: 13px; font-weight: 500;
+  transition: all 0.15s;
+}
+.btn-soft { background: var(--chip); color: var(--text); }
+.btn-soft:hover { background: #dcdcd8; }
+.btn-primary { background: var(--accent); color: #fff; }
+.btn-primary:hover { background: var(--accent-hover); }
+.btn-danger { background: #e53e3e; color: #fff; }
+.btn-danger:hover { background: #c53030; }
+
+.btn-row { display: flex; gap: 10px; margin-top: 8px; }
+
+.models-output {
+  margin-top: 12px;
+  padding: 10px;
+  background: #f8f8f6;
+  border-radius: 8px;
+  font-family: var(--font-mono); font-size: 11px;
+  max-height: 200px; overflow-y: auto;
+  white-space: pre-wrap;
+  user-select: all;
+  display: none;
+}
+
+/* ========== MIGRATION TAB ========== */
+.migration-header {
+  display: flex; justify-content: space-between; align-items: flex-start;
+  margin-bottom: 22px;
+}
+.migration-header h2 { font-size: 24px; font-weight: 600; }
+.migration-header p { font-size: 13px; color: var(--text-secondary); margin-top: 4px; }
+
+.loading-center {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  padding: 60px; gap: 12px; color: var(--text-secondary);
+}
+
+.spinner {
+  width: 28px; height: 28px;
+  border: 3px solid var(--chip);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.empty-state { text-align: center; padding: 60px; color: var(--text-secondary); }
+
+.provider-group { margin-bottom: 16px; }
+.provider-group-header {
+  display: flex; align-items: center; gap: 8px;
+  padding: 10px 14px;
+  background: var(--code);
+  border-radius: 8px;
+  cursor: pointer; user-select: none;
+}
+.provider-group-header:hover { background: #e0e0dc; }
+.provider-group-arrow {
+  width: 16px; font-size: 12px; color: var(--text-secondary);
+  transition: transform 0.2s; text-align: center;
+}
+.provider-group-arrow.expanded { transform: rotate(90deg); }
+.provider-group-name { font-size: 14px; font-weight: 600; flex: 1; }
+.provider-group-count { font-size: 12px; color: var(--text-secondary); }
+
+.thread-list { display: none; }
+.thread-list.expanded { display: block; }
+
+.thread-item {
+  display: flex; align-items: center; gap: 12px;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--stroke);
+  transition: background 0.1s;
+}
+.thread-item:hover { background: rgba(0,0,0,0.02); }
+.thread-title {
+  flex: 1; font-size: 13px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.thread-model {
+  font-size: 11px; color: var(--text-secondary);
+  padding: 2px 8px; background: var(--code); border-radius: 4px;
+}
+
+.migrate-select {
+  padding: 6px 10px;
+  border: 1px solid #d1d1d1;
+  border-radius: 6px;
+  font-family: var(--font); font-size: 12px;
+  background: #fff;
+  min-width: 140px;
+}
+.migrate-select:focus { outline: none; border-color: var(--accent); }
+
+/* ========== FOOTER ========== */
+.footer {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 12px 28px;
+  background: var(--panel);
+  border-top: 1px solid var(--stroke);
+  font-size: 12px; color: var(--text-secondary);
+}
+
+.status-msg { flex: 1; }
+.status-msg.error { color: #e53e3e; }
+
+/* ========== TOAST ========== */
+.toast {
+  position: fixed; bottom: 60px; left: 50%; transform: translateX(-50%);
+  padding: 10px 18px;
+  border-radius: 8px;
+  font-size: 13px; font-weight: 500; color: #fff;
+  background: rgba(0,0,0,0.85);
+  z-index: 100;
+  opacity: 0; pointer-events: none;
+  transition: opacity 0.3s;
+}
+.toast.show { opacity: 1; }
+.toast.error { background: rgba(229,62,62,0.9); }
+
+/* ========== SCROLLBAR ========== */
+::-webkit-scrollbar { width: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #ccc; border-radius: 10px; }
+</style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<aside class="sidebar">
+  <div class="sidebar-brand">
+    <div class="sidebar-logo">Y</div>
+    <div>
+      <div class="sidebar-title">Youlin</div>
+      <div class="sidebar-sub">Codex Switcher</div>
+    </div>
+  </div>
+
+  <div class="sidebar-section">
+    <div class="sidebar-section-label">当前配置</div>
+    <div class="sidebar-current" id="currentConfig">正在读取...</div>
+  </div>
+
+  <div class="sidebar-section-label" style="margin-bottom:0">快速切换</div>
+  <div class="quick-switch-btn" onclick="quickSwitch('deepseek')">
+    <div class="quick-switch-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></div>
+    <div class="quick-switch-info">
+      <div class="quick-switch-name">DeepSeek V4 Pro</div>
+      <div class="quick-switch-desc">本地 8788 代理</div>
+    </div>
+  </div>
+  <div class="quick-switch-btn" onclick="quickSwitch('gpt')">
+    <div class="quick-switch-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L15 9H22L16 14L19 21L12 16L5 21L8 14L2 9H9L12 2Z"/></svg></div>
+    <div class="quick-switch-info">
+      <div class="quick-switch-name">GPT-5.5</div>
+      <div class="quick-switch-desc">OpenAI 官方</div>
+    </div>
+  </div>
+  <div class="quick-switch-btn" onclick="quickSwitch('qwen')">
+    <div class="quick-switch-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.22 4.22l2.12 2.12M17.66 17.66l2.12 2.12M2 12h3M19 12h3M4.22 19.78l2.12-2.12M17.66 6.34l2.12-2.12"/></svg></div>
+    <div class="quick-switch-info">
+      <div class="quick-switch-name">Qwen 3.6 Plus</div>
+      <div class="quick-switch-desc">本地 8789 代理</div>
+    </div>
+  </div>
+
+  <div class="sidebar-bottom">
+    <div class="sidebar-hint">切换后需完全退出并重新打开 Codex。</div>
+    <button class="btn btn-soft" onclick="openConfigToml()">打开 config.toml</button>
+  </div>
+</aside>
+
+<!-- MAIN -->
+<main class="main">
+  <div class="tab-bar">
+    <button class="tab-btn active" onclick="switchTab('provider')" id="tabProvider">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="8" rx="2"/><rect x="2" y="14" width="20" height="8" rx="2"/><circle cx="6" cy="6" r="1"/><circle cx="10" cy="6" r="1"/></svg>
+      供应商
+    </button>
+    <button class="tab-btn" onclick="switchTab('migration')" id="tabMigration">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 014-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 01-4 4H3"/></svg>
+      线程迁移
+    </button>
+  </div>
+  <div class="tab-divider"></div>
+
+  <!-- PROVIDER TAB -->
+  <div class="tab-content" id="tabContentProvider">
+    <div class="provider-header">
+      <div>
+        <h2>添加新供应商</h2>
+        <p>配置 Codex 主对话框使用的模型供应商</p>
+      </div>
+      <button class="btn btn-soft" onclick="openRouterPage()">打开 Router</button>
+    </div>
+
+    <div class="card">
+      <div class="card-label">预设供应商</div>
+      <div class="preset-chips" id="presetChips"></div>
+    </div>
+
+    <div class="card provider-preview">
+      <div class="provider-avatar" id="providerAvatar">P</div>
+      <div>
+        <div class="provider-preview-name" id="providerName">新供应商</div>
+        <div class="provider-preview-note" id="providerNote">等待配置...</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="form-row">
+        <div class="field"><label>供应商名称</label><input id="fName" placeholder="例如：Claude 官方"></div>
+        <div class="field"><label>备注</label><input id="fNote" placeholder="例如：公司专用账号"></div>
+      </div>
+      <div class="form-row single" style="margin-top:16px">
+        <div class="field"><label>官网链接</label><input id="fWebsite" placeholder="https://example.com（可选）"></div>
+      </div>
+      <div class="form-row single" style="margin-top:16px">
+        <div class="field"><label>API Key</label><input id="fApiKey" type="password" placeholder="sk-..."></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="toggle-row">
+        <label>API 请求地址</label>
+        <div class="toggle on" id="toggleCompleteURL" onclick="toggleURL()"></div>
+      </div>
+      <div class="field" style="margin-bottom:16px">
+        <input id="fBaseURL" placeholder="https://your-api-endpoint.com/v1">
+      </div>
+      <div class="form-row">
+        <div class="field"><label>模型名称</label><input id="fModel" placeholder="gpt-5.4 / deepseek-v4-pro"></div>
+        <div class="field"><label>上下文窗口</label><input id="fContextWindow" type="number" placeholder="128000" value="128000"></div>
+      </div>
+      <p style="font-size:12px;color:var(--text-secondary);margin-top:8px">这里填 Codex 可用的 Responses API 地址。普通 Chat Completions 需先通过代理转换。</p>
+
+      <div class="btn-row">
+        <button class="btn btn-soft" onclick="fetchModels()">获取模型列表</button>
+        <button class="btn btn-primary" onclick="addAndSwitch()">添加并切换</button>
+        <button class="btn btn-soft" onclick="refreshStatus()">刷新状态</button>
+      </div>
+      <div class="models-output" id="modelsOutput"></div>
+    </div>
+  </div>
+
+  <!-- MIGRATION TAB -->
+  <div class="tab-content" id="tabContentMigration" style="display:none">
+    <div class="migration-header">
+      <div>
+        <h2>线程迁移</h2>
+        <p>将聊天记录从一个 Provider 迁移到另一个。迁移后需重启 Codex。</p>
+      </div>
+      <button class="btn btn-soft" onclick="loadThreads()">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg>
+        刷新
+      </button>
+    </div>
+
+    <div id="migrationContent">
+      <div class="loading-center"><div class="spinner"></div><span>加载线程...</span></div>
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <div class="footer">
+    <span class="status-msg" id="statusMsg"></span>
+    <span>迁移后需重启 Codex 才能看到变化</span>
+  </div>
+</main>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ========== STATE ==========
+let curTab = 'provider';
+let useCompleteURL = true;
+let selectedTemplate = 'custom';
+let providerList = [];
+let threadsByProvider = {};
+let expandedProviders = {};
+
+const templates = [
+  { id: 'custom', name: '自定义配置', baseURL: '', model: '', website: '', note: '' },
+  { id: 'openai', name: 'OpenAI Official', baseURL: 'https://api.openai.com/v1', model: 'gpt-5.5', website: 'https://platform.openai.com', note: '官方账号' },
+  { id: 'deepseek', name: 'DeepSeek', baseURL: 'http://127.0.0.1:8788/v1', model: 'deepseek-v4-pro', website: 'https://api-docs.deepseek.com', note: '本地代理' },
+  { id: 'qwen', name: 'Qwen', baseURL: 'http://127.0.0.1:8789/v1', model: 'qwen3.6-plus', website: 'https://bailian.console.aliyun.com', note: '本地代理' },
+  { id: 'openrouter', name: 'OpenRouter', baseURL: 'https://openrouter.ai/api/v1', model: 'openai/gpt-5', website: 'https://openrouter.ai', note: '' },
+  { id: 'kimi', name: 'Kimi', baseURL: 'https://api.moonshot.cn/v1', model: 'kimi-k2-0711-preview', website: 'https://platform.moonshot.cn', note: '' },
+  { id: 'zhipu', name: 'GLM', baseURL: 'https://open.bigmodel.cn/api/paas/v4', model: 'glm-4.6', website: 'https://bigmodel.cn', note: '' },
+];
+
+// ========== API CALLS ==========
+async function api(path, opts = {}) {
+  const res = await fetch('/api' + path, {
+    method: opts.method || 'GET',
+    headers: { 'Content-Type': 'application/json' },
+    body: opts.body ? JSON.stringify(opts.body) : undefined,
+  });
+  return res.json();
+}
+
+// ========== INIT ==========
+async function init() {
+  renderPresetChips();
+  await refreshStatus();
+  applyTemplate(templates[0]);
+}
+
+function renderPresetChips() {
+  const container = document.getElementById('presetChips');
+  container.innerHTML = templates.map(t => {
+    const featured = t.id !== 'custom' && t.id !== 'openai';
+    return `<button class="chip ${selectedTemplate === t.id ? 'active' : ''}" onclick="selectTemplate('${t.id}')">
+      ${t.name}
+      ${featured ? '<span class="chip-star">★</span>' : ''}
+    </button>`;
+  }).join('');
+}
+
+function selectTemplate(id) {
+  selectedTemplate = id;
+  const t = templates.find(x => x.id === id);
+  if (t) applyTemplate(t);
+  renderPresetChips();
+}
+
+function applyTemplate(t) {
+  document.getElementById('fName').value = t.name;
+  document.getElementById('fWebsite').value = t.website || '';
+  document.getElementById('fBaseURL').value = t.baseURL || '';
+  document.getElementById('fModel').value = t.model || '';
+  document.getElementById('fNote').value = t.note || '';
+  updateProviderPreview();
+}
+
+function updateProviderPreview() {
+  const name = document.getElementById('fName').value || '新供应商';
+  const note = document.getElementById('fNote').value || '等待配置...';
+  document.getElementById('providerName').textContent = name;
+  document.getElementById('providerNote').textContent = note;
+  document.getElementById('providerAvatar').textContent = name.charAt(0).toUpperCase() || 'P';
+}
+
+// ========== STATUS ==========
+async function refreshStatus() {
+  try {
+    const data = await api('/status');
+    document.getElementById('currentConfig').textContent = data.config || '未读取到模型配置';
+  } catch (e) {
+    document.getElementById('currentConfig').textContent = '读取失败';
+  }
+}
+
+// ========== QUICK SWITCH ==========
+async function quickSwitch(target) {
+  setStatus('切换中...');
+  try {
+    const data = await api('/quick-switch', { method: 'POST', body: { target } });
+    setStatus(data.message || '切换成功');
+    showToast(data.message || '切换成功', !data.success);
+    await refreshStatus();
+  } catch (e) {
+    setStatus('Error: ' + e.message);
+    showToast('切换失败: ' + e.message, true);
+  }
+}
+
+// ========== ADD & SWITCH ==========
+async function addAndSwitch() {
+  const providerName = document.getElementById('fName').value.trim();
+  const note = document.getElementById('fNote').value.trim();
+  const website = document.getElementById('fWebsite').value.trim();
+  const apiKey = document.getElementById('fApiKey').value.trim();
+  let baseURL = document.getElementById('fBaseURL').value.trim();
+  const modelName = document.getElementById('fModel').value.trim();
+  const contextWindow = parseInt(document.getElementById('fContextWindow').value) || 128000;
+
+  if (!providerName) { showToast('供应商名称不能为空', true); return; }
+  if (!baseURL) { showToast('API 请求地址不能为空', true); return; }
+  if (!modelName) { showToast('模型名称不能为空', true); return; }
+
+  // Normalize base URL
+  while (baseURL.endsWith('/')) baseURL = baseURL.slice(0, -1);
+
+  setStatus('正在配置...');
+  try {
+    const data = await api('/add-provider', {
+      method: 'POST',
+      body: { providerName, note, website, apiKey, baseURL, modelName, contextWindow, useCompleteURL }
+    });
+    setStatus(data.message || '添加成功');
+    showToast(data.message || '添加成功', !data.success);
+    await refreshStatus();
+  } catch (e) {
+    setStatus('Error: ' + e.message);
+    showToast('添加失败: ' + e.message, true);
+  }
+}
+
+// ========== FETCH MODELS ==========
+async function fetchModels() {
+  const output = document.getElementById('modelsOutput');
+  const apiKey = document.getElementById('fApiKey').value.trim();
+  let baseURL = document.getElementById('fBaseURL').value.trim();
+  while (baseURL.endsWith('/')) baseURL = baseURL.slice(0, -1);
+
+  output.style.display = 'block';
+  output.textContent = '正在获取...';
+
+  try {
+    const data = await api('/fetch-models', {
+      method: 'POST',
+      body: { baseURL, apiKey }
+    });
+    output.textContent = data.models || data.error || '无响应';
+  } catch (e) {
+    output.textContent = 'Error: ' + e.message;
+  }
+}
+
+// ========== THREADS ==========
+async function loadThreads() {
+  const container = document.getElementById('migrationContent');
+  container.innerHTML = '<div class="loading-center"><div class="spinner"></div><span>加载线程...</span></div>';
+
+  try {
+    const data = await api('/threads');
+    providerList = data.providers || [];
+    threadsByProvider = data.threads || {};
+
+    if (providerList.length === 0) {
+      container.innerHTML = '<div class="empty-state">没有找到线程</div>';
+      return;
+    }
+    renderThreads();
+  } catch (e) {
+    container.innerHTML = `<div class="empty-state">加载失败: ${e.message}</div>`;
+  }
+}
+
+function renderThreads() {
+  const container = document.getElementById('migrationContent');
+  let html = '';
+  for (const prov of providerList) {
+    const threads = threadsByProvider[prov.id] || [];
+    const isExpanded = !!expandedProviders[prov.id];
+    html += `<div class="provider-group">
+      <div class="provider-group-header" onclick="toggleProvider('${prov.id}')">
+        <span class="provider-group-arrow${isExpanded ? ' expanded' : ''}">▶</span>
+        <span class="provider-group-name">${prov.name}</span>
+        <span class="provider-group-count">${threads.length} 条</span>
+      </div>
+      <div class="thread-list${isExpanded ? ' expanded' : ''}" id="threadList_${prov.id}">
+        ${threads.map(t => {
+          const targets = providerList.filter(p => p.id !== prov.id);
+          return `<div class="thread-item">
+            <span class="thread-title" title="${t.title}">${t.title}</span>
+            <span class="thread-model">${t.model}</span>
+            <select class="migrate-select" id="migTarget_${t.id}">
+              <option value="">迁移到...</option>
+              ${targets.map(p => `<option value="${p.id}">${p.name}</option>`).join('')}
+            </select>
+            <button class="btn btn-primary" onclick="migrateThread('${t.id}', '${prov.id}')" style="height:30px;font-size:12px;padding:0 12px;">迁移</button>
+          </div>`;
+        }).join('')}
+      </div>
+    </div>`;
+  }
+  container.innerHTML = html;
+}
+
+function toggleProvider(providerId) {
+  expandedProviders[providerId] = !expandedProviders[providerId];
+  const list = document.getElementById('threadList_' + providerId);
+  if (list) {
+    list.classList.toggle('expanded', !!expandedProviders[providerId]);
+    const arrow = list.parentElement.querySelector('.provider-group-arrow');
+    if (arrow) arrow.classList.toggle('expanded', !!expandedProviders[providerId]);
+  }
+}
+
+async function migrateThread(threadId, currentProvider) {
+  const sel = document.getElementById('migTarget_' + threadId);
+  const targetProvider = sel.value;
+  if (!targetProvider) { showToast('请选择目标 Provider', true); return; }
+  if (targetProvider === currentProvider) { showToast('不能迁移到同一个 Provider', true); return; }
+
+  setStatus('迁移中...');
+  try {
+    const data = await api('/migrate-thread', {
+      method: 'POST',
+      body: { threadId, targetProvider }
+    });
+    setStatus(data.message || '迁移完成');
+    showToast('迁移成功!', !data.success);
+    await loadThreads();
+  } catch (e) {
+    setStatus('迁移失败: ' + e.message);
+    showToast('迁移失败: ' + e.message, true);
+  }
+}
+
+// ========== UI HELPERS ==========
+function switchTab(tab) {
+  curTab = tab;
+  document.getElementById('tabProvider').classList.toggle('active', tab === 'provider');
+  document.getElementById('tabMigration').classList.toggle('active', tab === 'migration');
+  document.getElementById('tabContentProvider').style.display = tab === 'provider' ? '' : 'none';
+  document.getElementById('tabContentMigration').style.display = tab === 'migration' ? '' : 'none';
+
+  if (tab === 'migration') {
+    loadThreads();
+  }
+}
+
+function toggleURL() {
+  useCompleteURL = !useCompleteURL;
+  document.getElementById('toggleCompleteURL').classList.toggle('on', useCompleteURL);
+}
+
+function setStatus(msg) {
+  const el = document.getElementById('statusMsg');
+  el.textContent = msg || '';
+  el.className = 'status-msg' + (msg && msg.toLowerCase().includes('error') ? ' error' : '');
+}
+
+function showToast(msg, isError) {
+  const toast = document.getElementById('toast');
+  toast.textContent = msg;
+  toast.className = 'toast show' + (isError ? ' error' : '');
+  clearTimeout(toast._timer);
+  toast._timer = setTimeout(() => { toast.className = 'toast'; }, 3000);
+}
+
+function openRouterPage() {
+  window.open('http://127.0.0.1:8787/', '_blank');
+}
+
+function openConfigToml() {
+  // This triggers a download/view via the server
+  window.open('/api/open-config', '_blank');
+}
+
+// ========== START ==========
+document.querySelectorAll('.field input').forEach(input => {
+  input.addEventListener('input', updateProviderPreview);
+});
+init();
+</script>
+</body>
+</html>

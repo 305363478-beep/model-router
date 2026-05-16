@@ -7,7 +7,7 @@ import { DatabaseSync } from "node:sqlite";
 import { execSync } from "node:child_process";
 import { ensureDefaultConfig } from "../lib/config.js";
 import { ask, getStatus, setModel, handoff } from "../lib/router.js";
-import { listCodexPresets, readCodexTopLevel, saveCustomModel, switchCodexPreset } from "../lib/codex-config.js";
+import { codexConfigPath, listCodexPresets, readCodexTopLevel, saveCustomModel, switchCodexPreset } from "../lib/codex-config.js";
 
 const args = parseArgs(process.argv.slice(2));
 const cwd = path.resolve(args.project || process.cwd());
@@ -25,6 +25,7 @@ const server = http.createServer(async (req, res) => {
       regenerateMigrateHtml();
       return serveMigrateHtml(res, req.method === "HEAD");
     }
+    if ((req.method === "GET" || req.method === "HEAD") && url.pathname === "/desktop") return desktopHtml(res, req.method === "HEAD");
     if (req.method === "GET" && url.pathname === "/api/status") return json(res, await getStatus());
     if (req.method === "GET" && url.pathname === "/api/codex/status") {
       return json(res, { current: await readCodexTopLevel(), presets: await listCodexPresets() });
@@ -51,9 +52,37 @@ const server = http.createServer(async (req, res) => {
     if (req.method === "GET" && url.pathname === "/api/threads/list") {
       return json(res, await listThreads());
     }
+    if (req.method === "GET" && url.pathname === "/api/threads") {
+      return json(res, await listThreads());
+    }
     if (req.method === "POST" && url.pathname === "/api/threads/migrate") {
       const body = await readJson(req);
       return json(res, await migrateThread(body.threadId, body.targetProvider));
+    }
+    if (req.method === "POST" && url.pathname === "/api/migrate-thread") {
+      const body = await readJson(req);
+      return json(res, await migrateThread(body.threadId, body.targetProvider));
+    }
+    if (req.method === "POST" && url.pathname === "/api/quick-switch") {
+      const body = await readJson(req);
+      return json(res, await quickSwitchDesktop(body.target));
+    }
+    if (req.method === "POST" && url.pathname === "/api/add-provider") {
+      const body = await readJson(req);
+      return json(res, await addProviderDesktop(body));
+    }
+    if (req.method === "POST" && url.pathname === "/api/fetch-models") {
+      const body = await readJson(req);
+      return json(res, await fetchModelsFromProvider(body.baseURL, body.apiKey));
+    }
+    if (req.method === "GET" && url.pathname === "/api/open-config") {
+      try {
+        const configText = fs.readFileSync(codexConfigPath, "utf8");
+        res.writeHead(200, { "content-type": "text/plain; charset=utf-8" });
+        return res.end(configText);
+      } catch (e) {
+        return json(res, { error: e.message }, 500);
+      }
     }
     res.writeHead(404).end("not found");
   } catch (err) {
@@ -501,3 +530,71 @@ function serveMigrateHtml(res, headOnly) {
   }
 }
 
+
+// --- Desktop app handlers ---
+
+function desktopHtml(res, headOnly = false) {
+  const filePath = new URL("./youlin-desktop.html", import.meta.url).pathname;
+  res.writeHead(200, { "content-type": "text/html; charset=utf-8" });
+  if (headOnly) return res.end();
+  const html = fs.readFileSync(filePath, "utf8");
+  res.end(html);
+}
+
+async function quickSwitchDesktop(target) {
+  const presetMap = {
+    deepseek: "deepseek-v4-pro",
+    gpt: "gpt",
+    qwen: "qwen",
+  };
+  const preset = presetMap[target] || target;
+  return switchCodexPreset(preset);
+}
+
+async function addProviderDesktop(body) {
+  const {
+    providerName, note, website, apiKey, baseURL, modelName, contextWindow, useCompleteURL
+  } = body;
+
+  if (!providerName || !baseURL || !modelName) {
+    return { success: false, message: "供应商名称、API地址、模型名称为必填" };
+  }
+
+  const id = "youlin-" + slug(providerName);
+  const envKey = slug(providerName).toUpperCase().replace(/-/g, "_") + "_API_KEY";
+  const label = providerName;
+
+  try {
+    const result = await saveCustomModel({ id, label, baseUrl: baseURL, model: modelName, apiKeyEnv: envKey, apiKey, contextWindow: contextWindow || 128000 });
+    return { success: true, message: `已切换到 ${label}。完全退出并重新打开 Codex。\nResult: ${result}` };
+  } catch (e) {
+    return { success: false, message: e.message || String(e) };
+  }
+}
+
+async function fetchModelsFromProvider(baseURL, apiKey) {
+  const modelsURL = baseURL.replace(/\/+$/, "") + "/models";
+  try {
+    const headers = { "Accept": "application/json" };
+    if (apiKey) headers["Authorization"] = `Bearer ${apiKey}`;
+    const resp = await fetch(modelsURL, { headers, signal: AbortSignal.timeout(10000) });
+    const text = await resp.text();
+    try {
+      const data = JSON.parse(text);
+      if (data.data && Array.isArray(data.data)) {
+        return { models: data.data.map(m => m.id || JSON.stringify(m)).slice(0, 50).join("\n") };
+      }
+      return { models: text.slice(0, 5000) };
+    } catch {
+      return { models: text.slice(0, 5000) };
+    }
+  } catch (e) {
+    return { error: e.message || String(e) };
+  }
+}
+
+function slug(value) {
+  return value.toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "");
+}
