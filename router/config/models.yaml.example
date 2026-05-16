@@ -1,0 +1,36 @@
+models:
+  gpt:
+    provider: openai-compatible
+    model: gpt-5
+    base_url: https://api.openai.com/v1
+    api_key_env: OPENAI_API_KEY
+
+  deepseek:
+    provider: openai-compatible
+    model: deepseek-chat
+    base_url: https://api.deepseek.com/v1
+    api_key_env: DEEPSEEK_API_KEY
+
+  qwen:
+    provider: openai-compatible
+    model: qwen-plus
+    base_url: https://dashscope.aliyuncs.com/compatible-mode/v1
+    api_key_env: DASHSCOPE_API_KEY
+
+  claude_api:
+    provider: anthropic
+    model: claude-sonnet-4-5
+    api_key_env: ANTHROPIC_API_KEY
+
+  claude_code:
+    provider: cli
+    command: claude
+    args:
+      - "-p"
+      - "{{prompt}}"
+    timeout_ms: 600000
+
+  local:
+    provider: ollama
+    model: qwen2.5-coder
+    base_url: http://localhost:11434

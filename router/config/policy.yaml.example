@@ -1,0 +1,33 @@
+default_mode: manual
+sticky_model: deepseek
+manual_aliases:
+  gpt: gpt
+  deepseek: deepseek
+  qwen: qwen
+  claude: claude_api
+  claude-code: claude_code
+  local: local
+auto:
+  architecture:
+    model: gpt
+  complex_debug:
+    model: gpt
+  code_review:
+    model: gpt
+  security_review:
+    model: gpt
+  implementation:
+    model: deepseek
+  tests:
+    model: deepseek
+  summarization:
+    model: qwen
+  long_context_scan:
+    model: qwen
+  cheap_task:
+    model: local
+fallback:
+  - deepseek
+  - qwen
+  - claude_code
+  - local

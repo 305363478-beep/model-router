@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "youlin": {
+      "command": "/Users/tanyouguang/.model-router/bin/model-router-mcp",
+      "args": [],
+      "env": {
+        "MODEL_ROUTER_HOME": "/Users/tanyouguang/.model-router"
+      }
+    }
+  }
+}
