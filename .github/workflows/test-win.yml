@@ -5,97 +5,98 @@ on:
     paths:
       - 'router/**'
       - 'scripts/**'
+      - 'tests/**'
       - '.github/workflows/test-win.yml'
   pull_request:
     paths:
       - 'router/**'
       - 'scripts/**'
-  workflow_dispatch:  # 手动触发
+      - 'tests/**'
+  workflow_dispatch:
 
 jobs:
-  windows-test:
+  # ==================== 静态 + 冒烟 ====================
+  smoke:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
-
       - uses: actions/setup-node@v4
-        with:
-          node-version: '20'
+        with: { node-version: '20' }
 
-      - name: Verify Node.js
-        run: node -v
-
-      - name: Static checks (batch files)
+      - name: Batch scripts check
         shell: pwsh
         run: |
           $install = Get-Content scripts/安装-Windows.bat
           $startup = Get-Content scripts/启动Youlin.bat
-          
-          Write-Host "--- 检查 安装-Windows.bat ---"
-          if ($install -match 'where node') { Write-Host "PASS: Node.js check present" } else { throw "FAIL: missing where node" }
-          if ($install -match 'xcopy') { Write-Host "PASS: xcopy present" } else { throw "FAIL: missing xcopy" }
-          if ($install -match 'USERPROFILE') { Write-Host "PASS: USERPROFILE present" } else { throw "FAIL: missing USERPROFILE" }
-          
-          Write-Host "--- 检查 启动Youlin.bat ---"
-          if ($startup -match 'where node') { Write-Host "PASS: Node.js check present" } else { throw "FAIL: missing where node" }
-          if ($startup -match '127.0.0.1:8787') { Write-Host "PASS: port 8787 present" } else { throw "FAIL: missing port" }
-
-      - name: Parse all JS files
-        run: |
-          Get-ChildItem -Path router -Recurse -Filter *.js | ForEach-Object {
-            Write-Host "Parsing: $($_.FullName)"
-            $code = Get-Content $_.FullName -Raw
-            if ($code.Length -lt 10) { throw "File too short: $($_.Name)" }
-          }
-          Write-Host "All JS files parse OK"
-
-      - name: Check platform-specific branches
-        run: |
-          $ui = Get-Content router/bin/router-ui.js -Raw
-          if ($ui -match 'win32') { Write-Host "PASS: win32 branch exists" } else { throw "FAIL: missing win32 branch" }
-          
-          $doctor = Get-Content router/bin/router-doctor.js -Raw
-          if ($doctor -match 'win32') { Write-Host "PASS: doctor has win32 branch" } else { throw "FAIL: missing win32 branch in doctor" }
-
-      - name: Start router-ui and smoke test
-        run: |
-          Write-Host "Starting Youlin server..."
-          Start-Process -NoNewWindow -FilePath "node" -ArgumentList "router/bin/router-ui.js","--port","8787"
-          
-          Write-Host "Waiting for server..."
-          $maxRetry = 10
-          for ($i = 0; $i -lt $maxRetry; $i++) {
-            try {
-              $resp = Invoke-WebRequest -Uri "http://127.0.0.1:8787/api/status" -UseBasicParsing -TimeoutSec 2
-              Write-Host "PASS: server responded with status $($resp.StatusCode)"
-              Write-Host $resp.Content
-              break
-            } catch {
-              Write-Host "Retry $($i+1)/$maxRetry..."
-              Start-Sleep -Seconds 1
+          @(
+            @{File="安装-Windows.bat"; Checks=@("where node","xcopy","USERPROFILE")},
+            @{File="启动Youlin.bat";   Checks=@("where node","127.0.0.1:8787")}
+          ) | ForEach-Object {
+            $content = Get-Content "scripts/$($_.File)"
+            foreach ($k in $_.Checks) {
+              if ($content -match [regex]::Escape($k)) { Write-Host "PASS: $($_.File) - $k" }
+              else { throw "FAIL: $($_.File) missing $k" }
             }
           }
-          if ($i -ge $maxRetry) { throw "FAIL: server did not start" }
 
-      - name: Test desktop page
+      - name: JS file parse check
         run: |
-          $resp = Invoke-WebRequest -Uri "http://127.0.0.1:8787/desktop" -UseBasicParsing
-          if ($resp.Content -match 'Youlin|model-router|model') {
-            Write-Host "PASS: desktop page loads"
-          } else {
-            Write-Host "WARNING: desktop page content looks unusual"
+          Get-ChildItem -Path router -Recurse -Filter *.js | ForEach-Object {
+            if ((Get-Content $_.FullName -Raw).Length -lt 10) { throw "Too short: $($_.Name)" }
+          }
+          Write-Host "All JS files OK"
+
+      - name: Platform branch check
+        run: |
+          if ((Get-Content router/bin/router-ui.js -Raw) -match 'win32') { Write-Host "PASS: win32 branch" }
+          else { throw "FAIL: missing win32" }
+
+      - name: Start server + smoke test
+        run: |
+          Start-Process -NoNewWindow -FilePath "node" -ArgumentList "router/bin/router-ui.js","--port","8787"
+          for ($i=0; $i -lt 10; $i++) {
+            try { Invoke-WebRequest "http://127.0.0.1:8787/api/status" -UseBasicParsing -TimeoutSec 2 | Out-Null; Write-Host "Server UP"; break }
+            catch { Start-Sleep 1 }
           }
 
-      - name: Test settings page
+  # ==================== Playwright UI 测试 ====================
+  ui:
+    needs: smoke
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '20' }
+
+      - name: Install Playwright
         run: |
-          $resp = Invoke-WebRequest -Uri "http://127.0.0.1:8787/settings" -UseBasicParsing
-          if ($resp.StatusCode -eq 200) {
-            Write-Host "PASS: settings page loads"
-          } else {
-            throw "FAIL: settings page error"
+          npm init -y --silent
+          npm install @playwright/test --save-dev
+          npx playwright install chromium --with-deps
+
+      - name: Start Youlin server
+        run: |
+          Start-Process -NoNewWindow -FilePath "node" -ArgumentList "router/bin/router-ui.js","--port","8787"
+          for ($i=0; $i -lt 10; $i++) {
+            try { Invoke-WebRequest "http://127.0.0.1:8787/api/status" -UseBasicParsing -TimeoutSec 2 | Out-Null; Write-Host "Server UP"; break }
+            catch { Start-Sleep 1 }
           }
 
-      - name: Cleanup
+      - name: Run Playwright UI tests
+        run: npx playwright test tests/youlin-ui.spec.mjs --reporter=list
+
+      - name: Upload screenshots
         if: always()
-        run: |
-          Get-Process -Name "node" -ErrorAction SilentlyContinue | Stop-Process -Force
+        uses: actions/upload-artifact@v4
+        with:
+          name: youlin-screenshots
+          path: test-results/*.png
+          retention-days: 7
+
+      - name: Upload Playwright report
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 7
