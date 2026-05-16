@@ -67,6 +67,9 @@ const server = http.createServer(async (req, res) => {
       const body = await readJson(req);
       return json(res, await quickSwitchDesktop(body.target));
     }
+    if (req.method === "POST" && url.pathname === "/api/restart-codex") {
+      return json(res, await restartCodexDesktop());
+    }
     if (req.method === "POST" && url.pathname === "/api/add-provider") {
       const body = await readJson(req);
       return json(res, await addProviderDesktop(body));
@@ -549,6 +552,34 @@ async function quickSwitchDesktop(target) {
   };
   const preset = presetMap[target] || target;
   return switchCodexPreset(preset);
+}
+
+async function restartCodexDesktop() {
+  try {
+    if (process.platform === "darwin") {
+      execSync(`(/usr/bin/osascript -e 'tell application "Codex" to quit' >/dev/null 2>&1; sleep 1; /usr/bin/open -a Codex >/dev/null 2>&1) &`, {
+        stdio: "ignore",
+        shell: "/bin/bash",
+      });
+      return { success: true, message: "已发送重启 Codex 指令。" };
+    }
+
+    if (process.platform === "win32") {
+      const script = [
+        "$p = Get-Process | Where-Object { $_.ProcessName -like 'Codex*' } | Select-Object -First 1",
+        "$path = if ($p) { $p.Path } else { $null }",
+        "if ($p) { Stop-Process -Id $p.Id -Force }",
+        "Start-Sleep -Seconds 1",
+        "if ($path) { Start-Process -FilePath $path } else { Start-Process 'Codex' }",
+      ].join("; ");
+      execSync(`powershell -NoProfile -ExecutionPolicy Bypass -Command ${JSON.stringify(script)}`, { stdio: "ignore" });
+      return { success: true, message: "已发送重启 Codex 指令。" };
+    }
+
+    return { success: false, message: "当前系统暂不支持一键重启 Codex。" };
+  } catch (e) {
+    return { success: false, message: e.message || String(e) };
+  }
 }
 
 async function addProviderDesktop(body) {

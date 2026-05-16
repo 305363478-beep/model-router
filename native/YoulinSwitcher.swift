@@ -200,6 +200,10 @@ struct ContentView: View {
                     NSWorkspace.shared.open(URL(fileURLWithPath: Paths.codexConfig))
                 }
                 .buttonStyle(SoftButtonStyle())
+                Button("一键重启 Codex") {
+                    restartCodex()
+                }
+                .buttonStyle(PrimaryButtonStyle())
             }
         }
         .padding(20)
@@ -334,6 +338,16 @@ struct ContentView: View {
             refresh()
         } catch {
             message = "Error: \(error.localizedDescription)"
+        }
+    }
+
+    func restartCodex() {
+        message = "正在重启 Codex..."
+        DispatchQueue.global(qos: .userInitiated).async {
+            let result = ConfigManager.restartCodex()
+            DispatchQueue.main.async {
+                message = result
+            }
         }
     }
 
@@ -1093,6 +1107,21 @@ enum ConfigManager {
         try old.write(to: URL(fileURLWithPath: backup))
         let data = try JSONSerialization.data(withJSONObject: next, options: [.prettyPrinted, .sortedKeys])
         try data.write(to: URL(fileURLWithPath: Paths.codexAuth))
+    }
+
+    static func restartCodex() -> String {
+        let script = """
+        (/usr/bin/osascript -e 'tell application "Codex" to quit' >/dev/null 2>&1; sleep 1; /usr/bin/open -a Codex >/dev/null 2>&1) &
+        """
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: "/bin/bash")
+        process.arguments = ["-lc", script]
+        do {
+            try process.run()
+            return "已发送重启 Codex 指令。"
+        } catch {
+            return "Error: \(error.localizedDescription)"
+        }
     }
 
     static func slug(_ value: String) -> String {

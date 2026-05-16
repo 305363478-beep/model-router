@@ -431,6 +431,7 @@ body {
   <div class="sidebar-bottom">
     <div class="sidebar-hint">切换后需完全退出并重新打开 Codex。</div>
     <button class="btn btn-soft" onclick="openConfigToml()">打开 config.toml</button>
+    <button class="btn btn-primary" onclick="restartCodex()">一键重启 Codex</button>
   </div>
 </aside>
 
@@ -804,6 +805,18 @@ function openRouterPage() {
 function openConfigToml() {
   // This triggers a download/view via the server
   window.open('/api/open-config', '_blank');
+}
+
+async function restartCodex() {
+  setStatus('正在重启 Codex...');
+  try {
+    const data = await api('/restart-codex', { method: 'POST' });
+    setStatus(data.message || '已发送重启 Codex 指令');
+    showToast(data.message || '已发送重启 Codex 指令', !data.success);
+  } catch (e) {
+    setStatus('Error: ' + e.message);
+    showToast('重启失败: ' + e.message, true);
+  }
 }
 
 // ========== START ==========
