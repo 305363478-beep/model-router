@@ -1,6 +1,7 @@
 @echo off
 chcp 65001 >nul
 title Youlin - Windows 安装
+cd /d "%~dp0"
 
 echo ========================================
 echo   Youlin - Windows 安装程序
@@ -24,6 +25,9 @@ if not exist "%ROUTER_DIR%\config\models.yaml" copy /Y "router\config\models.yam
 if not exist "%ROUTER_DIR%\config\policy.yaml" copy /Y "router\config\policy.yaml.example" "%ROUTER_DIR%\config\policy.yaml"
 if not exist "%ROUTER_DIR%\config\secrets.env" copy /Y "router\config\secrets.env.example" "%ROUTER_DIR%\config\secrets.env"
 
+echo 正在创建桌面快捷方式...
+powershell -NoProfile -ExecutionPolicy Bypass -Command "$desktop=[Environment]::GetFolderPath('Desktop'); $shortcut=Join-Path $desktop 'Youlin.lnk'; $target=Join-Path (Get-Location).Path '启动Youlin.bat'; $icon=Join-Path $env:USERPROFILE '.model-router\app\bin\youlin.ico'; $ws=New-Object -ComObject WScript.Shell; $s=$ws.CreateShortcut($shortcut); $s.TargetPath=$target; $s.WorkingDirectory=(Get-Location).Path; if(Test-Path $icon){ $s.IconLocation=$icon }; $s.Description='Youlin Codex Model Switcher'; $s.Save()"
+
 echo.
 echo ========================================
 echo   安装完成！
@@ -31,7 +35,7 @@ echo ========================================
 echo.
 echo 下一步：
 echo   1. 编辑 %ROUTER_DIR%\config\secrets.env 添加 API Key
-echo   2. 双击 启动Youlin.bat 启动 Youlin 桌面应用
+echo   2. 双击桌面 Youlin 图标启动 Youlin 桌面应用
 echo   3. 应用会自动以独立窗口打开
 echo.
 echo 功能：

@@ -1,6 +1,7 @@
 @echo off
 chcp 65001 >nul
 title Youlin
+cd /d "%~dp0"
 
 set "ROUTER_DIR=%USERPROFILE%\.model-router"
 
@@ -27,6 +28,9 @@ if not exist "%ROUTER_DIR%\app\bin\router-ui.js" (
     if not exist "%ROUTER_DIR%\config\secrets.env" copy /Y "router\config\secrets.env.example" "%ROUTER_DIR%\config\secrets.env" >nul
     echo 安装完成！
 )
+
+:: Keep the desktop shortcut using the blue Youlin icon.
+powershell -NoProfile -ExecutionPolicy Bypass -Command "$desktop=[Environment]::GetFolderPath('Desktop'); $shortcut=Join-Path $desktop 'Youlin.lnk'; $target=Join-Path (Get-Location).Path '启动Youlin.bat'; $icon=Join-Path $env:USERPROFILE '.model-router\app\bin\youlin.ico'; $ws=New-Object -ComObject WScript.Shell; $s=$ws.CreateShortcut($shortcut); $s.TargetPath=$target; $s.WorkingDirectory=(Get-Location).Path; if(Test-Path $icon){ $s.IconLocation=$icon }; $s.Description='Youlin Codex Model Switcher'; $s.Save()" >nul 2>nul
 
 :: Start the server in background
 echo 启动 Youlin 服务...
