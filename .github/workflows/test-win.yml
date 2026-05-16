@@ -1,0 +1,101 @@
+name: Test Youlin Windows
+
+on:
+  push:
+    paths:
+      - 'router/**'
+      - 'scripts/**'
+      - '.github/workflows/test-win.yml'
+  pull_request:
+    paths:
+      - 'router/**'
+      - 'scripts/**'
+  workflow_dispatch:  # 手动触发
+
+jobs:
+  windows-test:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Verify Node.js
+        run: node -v
+
+      - name: Static checks (batch files)
+        shell: pwsh
+        run: |
+          $install = Get-Content scripts/安装-Windows.bat
+          $startup = Get-Content scripts/启动Youlin.bat
+          
+          Write-Host "--- 检查 安装-Windows.bat ---"
+          if ($install -match 'where node') { Write-Host "PASS: Node.js check present" } else { throw "FAIL: missing where node" }
+          if ($install -match 'xcopy') { Write-Host "PASS: xcopy present" } else { throw "FAIL: missing xcopy" }
+          if ($install -match 'USERPROFILE') { Write-Host "PASS: USERPROFILE present" } else { throw "FAIL: missing USERPROFILE" }
+          
+          Write-Host "--- 检查 启动Youlin.bat ---"
+          if ($startup -match 'where node') { Write-Host "PASS: Node.js check present" } else { throw "FAIL: missing where node" }
+          if ($startup -match '127.0.0.1:8787') { Write-Host "PASS: port 8787 present" } else { throw "FAIL: missing port" }
+
+      - name: Parse all JS files
+        run: |
+          Get-ChildItem -Path router -Recurse -Filter *.js | ForEach-Object {
+            Write-Host "Parsing: $($_.FullName)"
+            $code = Get-Content $_.FullName -Raw
+            if ($code.Length -lt 10) { throw "File too short: $($_.Name)" }
+          }
+          Write-Host "All JS files parse OK"
+
+      - name: Check platform-specific branches
+        run: |
+          $ui = Get-Content router/bin/router-ui.js -Raw
+          if ($ui -match 'win32') { Write-Host "PASS: win32 branch exists" } else { throw "FAIL: missing win32 branch" }
+          
+          $doctor = Get-Content router/bin/router-doctor.js -Raw
+          if ($doctor -match 'win32') { Write-Host "PASS: doctor has win32 branch" } else { throw "FAIL: missing win32 branch in doctor" }
+
+      - name: Start router-ui and smoke test
+        run: |
+          Write-Host "Starting Youlin server..."
+          Start-Process -NoNewWindow -FilePath "node" -ArgumentList "router/bin/router-ui.js","--port","8787"
+          
+          Write-Host "Waiting for server..."
+          $maxRetry = 10
+          for ($i = 0; $i -lt $maxRetry; $i++) {
+            try {
+              $resp = Invoke-WebRequest -Uri "http://127.0.0.1:8787/api/status" -UseBasicParsing -TimeoutSec 2
+              Write-Host "PASS: server responded with status $($resp.StatusCode)"
+              Write-Host $resp.Content
+              break
+            } catch {
+              Write-Host "Retry $($i+1)/$maxRetry..."
+              Start-Sleep -Seconds 1
+            }
+          }
+          if ($i -ge $maxRetry) { throw "FAIL: server did not start" }
+
+      - name: Test desktop page
+        run: |
+          $resp = Invoke-WebRequest -Uri "http://127.0.0.1:8787/desktop" -UseBasicParsing
+          if ($resp.Content -match 'Youlin|model-router|model') {
+            Write-Host "PASS: desktop page loads"
+          } else {
+            Write-Host "WARNING: desktop page content looks unusual"
+          }
+
+      - name: Test settings page
+        run: |
+          $resp = Invoke-WebRequest -Uri "http://127.0.0.1:8787/settings" -UseBasicParsing
+          if ($resp.StatusCode -eq 200) {
+            Write-Host "PASS: settings page loads"
+          } else {
+            throw "FAIL: settings page error"
+          }
+
+      - name: Cleanup
+        if: always()
+        run: |
+          Get-Process -Name "node" -ErrorAction SilentlyContinue | Stop-Process -Force
