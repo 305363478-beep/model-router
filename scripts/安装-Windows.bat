@@ -1,7 +1,17 @@
 @echo off
 chcp 65001 >nul
 title Youlin - Windows 安装
+
+:: Check Node.js
+where node >nul 2>nul
+if %errorlevel% neq 0 (
+    echo [错误] 未找到 Node.js。请先安装 Node.js 18+：https://nodejs.org
+    pause
+    exit /b 1
+)
 cd /d "%~dp0"
+set "APP_ROOT=%~dp0"
+if not exist "%APP_ROOT%router\bin" set "APP_ROOT=%~dp0.."
 
 echo ========================================
 echo   Youlin - Windows 安装程序
@@ -17,16 +27,16 @@ mkdir "%ROUTER_DIR%\config" 2>nul
 mkdir "%ROUTER_DIR%\logs" 2>nul
 
 echo 正在复制文件...
-xcopy /E /Y "router\bin\*" "%ROUTER_DIR%\app\bin\"
-xcopy /E /Y "router\lib\*" "%ROUTER_DIR%\app\lib\"
-copy /Y "router\codex-mcp.json" "%ROUTER_DIR%"
+xcopy /E /Y "%APP_ROOT%\router\bin\*" "%ROUTER_DIR%\app\bin\"
+xcopy /E /Y "%APP_ROOT%\router\lib\*" "%ROUTER_DIR%\app\lib\"
+copy /Y "%APP_ROOT%\router\codex-mcp.json" "%ROUTER_DIR%"
 
-if not exist "%ROUTER_DIR%\config\models.yaml" copy /Y "router\config\models.yaml.example" "%ROUTER_DIR%\config\models.yaml"
-if not exist "%ROUTER_DIR%\config\policy.yaml" copy /Y "router\config\policy.yaml.example" "%ROUTER_DIR%\config\policy.yaml"
-if not exist "%ROUTER_DIR%\config\secrets.env" copy /Y "router\config\secrets.env.example" "%ROUTER_DIR%\config\secrets.env"
+if not exist "%ROUTER_DIR%\config\models.yaml" copy /Y "%APP_ROOT%\router\config\models.yaml.example" "%ROUTER_DIR%\config\models.yaml"
+if not exist "%ROUTER_DIR%\config\policy.yaml" copy /Y "%APP_ROOT%\router\config\policy.yaml.example" "%ROUTER_DIR%\config\policy.yaml"
+if not exist "%ROUTER_DIR%\config\secrets.env" copy /Y "%APP_ROOT%\router\config\secrets.env.example" "%ROUTER_DIR%\config\secrets.env"
 
 echo 正在创建桌面快捷方式...
-powershell -NoProfile -ExecutionPolicy Bypass -Command "$desktop=[Environment]::GetFolderPath('Desktop'); $shortcut=Join-Path $desktop 'Youlin.lnk'; $target=Join-Path (Get-Location).Path '启动Youlin.bat'; $icon=Join-Path $env:USERPROFILE '.model-router\app\bin\youlin.ico'; $ws=New-Object -ComObject WScript.Shell; $s=$ws.CreateShortcut($shortcut); $s.TargetPath=$target; $s.WorkingDirectory=(Get-Location).Path; if(Test-Path $icon){ $s.IconLocation=$icon }; $s.Description='Youlin Codex Model Switcher'; $s.Save()"
+powershell -NoProfile -ExecutionPolicy Bypass -Command "$desktop=[Environment]::GetFolderPath('Desktop'); $target=Join-Path (Get-Location).Path '启动Youlin.bat'; $icon=Join-Path $env:USERPROFILE '.model-router\app\bin\youlin.ico'; $ws=New-Object -ComObject WScript.Shell; foreach($name in @('Youlin.lnk','Youlin Switcher.lnk')){ $shortcut=Join-Path $desktop $name; $s=$ws.CreateShortcut($shortcut); $s.TargetPath=$target; $s.WorkingDirectory=(Get-Location).Path; if(Test-Path $icon){ $s.IconLocation=$icon }; $s.Description='Youlin Codex Model Switcher'; $s.Save() }; ie4uinit.exe -show"
 
 echo.
 echo ========================================
