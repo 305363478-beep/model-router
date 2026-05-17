@@ -89,7 +89,7 @@ export async function saveCustomModel({ id, label, baseUrl, model, apiKeyEnv, ap
   }
 
   const providerId = `youlin-${id}`;
-  await ensureCodexProvider(providerId, baseUrl.replace(/\/$/, ""), Number(contextWindow) || 128000);
+  await ensureCodexProvider(providerId, baseUrl.replace(/\/$/, ""), Number(contextWindow) || 128000, apiKeyEnv);
   return { id, providerId };
 }
 
@@ -160,6 +160,7 @@ function presetLines(preset, models) {
       providerName: cfg.label || id,
       baseUrl: String(cfg.base_url || "").replace(/\/$/, ""),
       contextWindow,
+      apiKeyEnv: cfg.api_key_env,
       lines: [
         `model = ${JSON.stringify(cfg.model)}`,
         `model_provider = ${JSON.stringify(providerId)}`,
@@ -178,6 +179,7 @@ function ensureProviderBlock(text, spec) {
     providerHeader,
     `name = ${JSON.stringify(spec.providerName || spec.label)}`,
     `base_url = ${JSON.stringify(spec.baseUrl)}`,
+    ...(spec.apiKeyEnv ? [`api_key_env = ${JSON.stringify(spec.apiKeyEnv)}`] : []),
     'wire_api = "responses"',
     "requires_openai_auth = true",
     "request_max_retries = 1",
@@ -188,19 +190,25 @@ function ensureProviderBlock(text, spec) {
   return `${text.replace(/\s*$/, "\n\n")}${block}`;
 }
 
-async function ensureCodexProvider(providerId, baseUrl, contextWindow) {
+async function ensureCodexProvider(providerId, baseUrl, contextWindow, apiKeyEnv) {
   const text = await fs.readFile(codexConfigPath, "utf8");
   if (text.includes(`[model_providers.${providerId}]`)) return;
-  const next = `${text.replace(/\s*$/, "\n\n")}${[
+  const providerBlock = [
     `[model_providers.${providerId}]`,
     `name = ${JSON.stringify(providerId)}`,
     `base_url = ${JSON.stringify(baseUrl)}`,
+  ];
+  if (apiKeyEnv) {
+    providerBlock.push(`api_key_env = ${JSON.stringify(apiKeyEnv)}`);
+  }
+  providerBlock.push(
     'wire_api = "responses"',
     "requires_openai_auth = true",
     "request_max_retries = 1",
     `# model_context_window = ${contextWindow}`,
     ""
-  ].join("\n")}`;
+  );
+  const next = `${text.replace(/\s*$/, "\n\n")}${providerBlock.join("\n")}`;
   await writeTextAtomic(codexConfigPath, next);
 }
 
