@@ -661,6 +661,11 @@ enum MigrationManager {
     static let dbPath = "\(Paths.home)/.codex/state_5.sqlite"
     static let codexConfigPath = "\(Paths.home)/.codex/config.toml"
     static let sessionsDir = "\(Paths.home)/.codex/sessions"
+    static let providerDefaultModels = [
+        "openai": "gpt-5.5",
+        "mimo2codex": "deepseek-v4-pro",
+        "mimo2codex-qwen": "qwen3.6-plus"
+    ]
 
     static func loadThreads() -> (providers: [(id: String, name: String)], threads: [String: [ThreadItem]]) {
         // Read provider display names from config
@@ -704,6 +709,8 @@ enum MigrationManager {
     }
 
     static func migrateThread(threadId: String, targetProvider: String) -> MigrationResult {
+        let targetModel = providerDefaultModels[targetProvider] ?? "gpt-5.5"
+
         // 1. Check thread exists and get current provider
         let checkSql = "select model_provider from threads where id = '\(threadId)';"
         let currentProvider = shell("sqlite3", dbPath, checkSql).trimmingCharacters(in: .whitespacesAndNewlines)
@@ -713,7 +720,7 @@ enum MigrationManager {
 
         // 2. Update SQLite
         let now = Int(Date().timeIntervalSince1970)
-        let updateSql = "update threads set model_provider = '\(targetProvider)', updated_at = \(now) where id = '\(threadId)';"
+        let updateSql = "update threads set model_provider = '\(targetProvider)', model = '\(targetModel)', updated_at = \(now) where id = '\(threadId)';"
         _ = shell("sqlite3", dbPath, updateSql)
 
         // 3. Update session JSONL
@@ -735,6 +742,7 @@ enum MigrationManager {
                            var dict = try? JSONSerialization.jsonObject(with: jsonData) as? [String: Any],
                            var payload = dict["payload"] as? [String: Any] {
                             payload["model_provider"] = targetProvider
+                            payload["model"] = targetModel
                             dict["payload"] = payload
                             if let newData = try? JSONSerialization.data(withJSONObject: dict),
                                let newLine = String(data: newData, encoding: .utf8) {

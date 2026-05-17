@@ -17,6 +17,12 @@ const DB_PATH = path.join(os.homedir(), ".codex", "state_5.sqlite");
 const SESSIONS_DIR = path.join(os.homedir(), ".codex", "sessions");
 await ensureDefaultConfig(cwd);
 
+const PROVIDER_DEFAULT_MODELS = {
+  openai: "gpt-5.5",
+  mimo2codex: "deepseek-v4-pro",
+  "mimo2codex-qwen": "qwen3.6-plus"
+};
+
 const server = http.createServer(async (req, res) => {
   try {
     const url = new URL(req.url, `http://${req.headers.host}`);
@@ -186,6 +192,7 @@ function listThreads() {
 
 function migrateThread(threadId, targetProvider) {
   if (!threadId || !targetProvider) throw new Error("threadId and targetProvider are required");
+  const targetModel = PROVIDER_DEFAULT_MODELS[targetProvider] || "gpt-5.5";
 
   // 1. Read current thread info
   const db = new DatabaseSync(DB_PATH, { open: true });
@@ -196,7 +203,7 @@ function migrateThread(threadId, targetProvider) {
 
     // 2. Update SQLite
     const now = Math.floor(Date.now() / 1000);
-    db.prepare("update threads set model_provider = ?, updated_at = ? where id = ?").run(targetProvider, now, threadId);
+    db.prepare("update threads set model_provider = ?, model = ?, updated_at = ? where id = ?").run(targetProvider, targetModel, now, threadId);
 
     const updated = db.prepare("select id, title, model_provider, model from threads where id = ?").get(threadId);
 
@@ -221,6 +228,7 @@ function migrateThread(threadId, targetProvider) {
                 const item = JSON.parse(lines[i]);
                 if (item.type === "session_meta" && item.payload) {
                   item.payload.model_provider = targetProvider;
+                  item.payload.model = targetModel;
                   lines[i] = JSON.stringify(item);
                   break;
                 }
