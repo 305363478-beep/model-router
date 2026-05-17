@@ -62,12 +62,19 @@ check "安装-Windows.bat - 有 Node.js 检查 (重要!)" '
     throw new Error("安装脚本缺少 Node.js 检查!");
 '
 
-check "启动Youlin.bat - where node + start /B" '
+check "启动Youlin.bat - where node + background start" '
   import fs from "node:fs";
   const c = fs.readFileSync("scripts/启动Youlin.bat", "utf8");
-  ["where node","start /B","127.0.0.1:8787"].forEach(k => {
+  ["where node","Youlin Router","127.0.0.1:8787"].forEach(k => {
     if (!c.includes(k)) throw new Error("missing " + k);
   });
+'
+
+check "启动Youlin.bat - 不依赖 timeout/curl" '
+  import fs from "node:fs";
+  const c = fs.readFileSync("scripts/启动Youlin.bat", "utf8").toLowerCase();
+  if (c.includes("timeout /t") || c.includes("curl -s"))
+    throw new Error("startup script should use PowerShell health checks");
 '
 
 echo ""
