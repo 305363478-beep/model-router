@@ -622,9 +622,11 @@ function selectTemplate(id) {
 function applyTemplate(t) {
   document.getElementById('fName').value = t.name;
   document.getElementById('fWebsite').value = t.website || '';
+  document.getElementById('fApiKey').value = '';
   document.getElementById('fBaseURL').value = t.baseURL || '';
   document.getElementById('fModel').value = t.model || '';
   document.getElementById('fNote').value = t.note || '';
+  document.getElementById('modelsOutput').textContent = '';
   updateProviderPreview();
 }
 
