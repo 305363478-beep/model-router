@@ -543,7 +543,7 @@ function serveMigrateHtml(res, headOnly) {
 
 function desktopHtml(res, headOnly = false) {
   const filePath = fileURLToPath(new URL("./youlin-desktop.html", import.meta.url));
-  res.writeHead(200, { "content-type": "text/html; charset=utf-8" });
+  res.writeHead(200, { "content-type": "text/html; charset=utf-8", "cache-control": "no-cache, no-store, must-revalidate", "pragma": "no-cache" });
   if (headOnly) return res.end();
   const html = fs.readFileSync(filePath, "utf8");
   res.end(html);

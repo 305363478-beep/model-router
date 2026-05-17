@@ -18,6 +18,12 @@
   --accent-hover: #0f5fcc;
   --text: #1a1a1a;
   --text-secondary: #6b6b6b;
+  --input-bg: #fff;
+  --input-border: #d1d1d1;
+  --toggle-off: #ccc;
+  --models-bg: #f8f8f6;
+  --scrollbar-thumb: #ccc;
+  --provider-hover: #e0e0dc;
   --radius: 10px;
   --font: -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft YaHei", sans-serif;
   --font-mono: "SF Mono", "Cascadia Code", "Consolas", monospace;
@@ -246,7 +252,7 @@ body {
 
 .toggle {
   position: relative; width: 44px; height: 24px;
-  background: #ccc; border-radius: 12px; cursor: pointer;
+  background: var(--toggle-off); border-radius: 12px; cursor: pointer;
   transition: background 0.2s;
 }
 .toggle.on { background: var(--accent); }
@@ -254,7 +260,7 @@ body {
   content: ''; position: absolute;
   top: 2px; left: 2px;
   width: 20px; height: 20px;
-  background: #fff; border-radius: 50%;
+  background: var(--input-bg); border-radius: 50%;
   transition: transform 0.2s;
 }
 .toggle.on::after { transform: translateX(20px); }
@@ -278,7 +284,7 @@ body {
 .models-output {
   margin-top: 12px;
   padding: 10px;
-  background: #f8f8f6;
+  background: var(--models-bg);
   border-radius: 8px;
   font-family: var(--font-mono); font-size: 11px;
   max-height: 200px; overflow-y: auto;
@@ -319,7 +325,7 @@ body {
   border-radius: 8px;
   cursor: pointer; user-select: none;
 }
-.provider-group-header:hover { background: #e0e0dc; }
+.provider-group-header:hover { background: var(--provider-hover); }
 .provider-group-arrow {
   width: 16px; font-size: 12px; color: var(--text-secondary);
   transition: transform 0.2s; text-align: center;
@@ -349,10 +355,10 @@ body {
 
 .migrate-select {
   padding: 6px 10px;
-  border: 1px solid #d1d1d1;
+  border: 1px solid var(--input-border);
   border-radius: 6px;
   font-family: var(--font); font-size: 12px;
-  background: #fff;
+  background: var(--input-bg);
   min-width: 140px;
 }
 .migrate-select:focus { outline: none; border-color: var(--accent); }
@@ -386,7 +392,7 @@ body {
 /* ========== SCROLLBAR ========== */
 ::-webkit-scrollbar { width: 5px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: #ccc; border-radius: 10px; }
+::-webkit-scrollbar-thumb { background: var(--scrollbar-thumb); border-radius: 10px; }
 
 @media (prefers-color-scheme: dark) {
   :root {
@@ -398,17 +404,15 @@ body {
     --stroke: rgba(255,255,255,0.1);
     --text: #e5e5e5;
     --text-secondary: #98989d;
-  }
-  .toggle { background: #555; }
-  .field input, .migrate-select {
-    background: #2c2c2e;
-    color: #e5e5e5;
-    border-color: rgba(255,255,255,0.15);
+    --input-bg: #2c2c2e;
+    --input-border: rgba(255,255,255,0.15);
+    --toggle-off: #555;
+    --models-bg: #2c2c2e;
+    --scrollbar-thumb: #555;
+    --provider-hover: #48484a;
   }
   .field input::placeholder { color: #636366; }
-  .models-output { background: #2c2c2e; }
   .btn-soft:hover { background: #48484a; }
-  ::-webkit-scrollbar-thumb { background: #555; }
 }
 
 </style>
