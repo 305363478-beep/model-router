@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 import http from "node:http";
+import { fileURLToPath } from "node:url";
 import path from "node:path";
 import os from "node:os";
 import fs from "node:fs";
@@ -89,7 +90,11 @@ const server = http.createServer(async (req, res) => {
     }
     res.writeHead(404).end("not found");
   } catch (err) {
-    json(res, { error: err.message || String(err) }, 500);
+    if (!res.headersSent) {
+      json(res, { error: err.message || String(err) }, 500);
+    } else {
+      console.error("Error after response sent:", err.message || String(err));
+    }
   }
 });
 
@@ -492,7 +497,7 @@ refresh().catch(err => { document.querySelector("#current").textContent = err.me
 
 // --- Migrate page helpers ---
 
-const MIGRATE_HTML_PATH = path.join(path.dirname(new URL(import.meta.url).pathname), "..", "migrate.html");
+const MIGRATE_HTML_PATH = path.join(path.dirname(fileURLToPath(import.meta.url)), "..", "migrate.html");
 
 function regenerateMigrateHtml() {
   const script = [
@@ -537,7 +542,7 @@ function serveMigrateHtml(res, headOnly) {
 // --- Desktop app handlers ---
 
 function desktopHtml(res, headOnly = false) {
-  const filePath = new URL("./youlin-desktop.html", import.meta.url).pathname;
+  const filePath = fileURLToPath(new URL("./youlin-desktop.html", import.meta.url));
   res.writeHead(200, { "content-type": "text/html; charset=utf-8" });
   if (headOnly) return res.end();
   const html = fs.readFileSync(filePath, "utf8");
