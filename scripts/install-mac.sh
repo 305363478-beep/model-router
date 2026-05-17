@@ -35,6 +35,8 @@ echo "[3/4] 安装 Youlin Switcher 应用..."
 if [ -d "${SCRIPT_DIR}/Youlin Switcher.app" ]; then
   rm -rf "${APP_DIR}/Youlin Switcher.app" 2>/dev/null || true
   cp -R "${SCRIPT_DIR}/Youlin Switcher.app" "${APP_DIR}/"
+  /usr/libexec/PlistBuddy -c "Set :NSRequiresAquaSystemAppearance true" "${APP_DIR}/Youlin Switcher.app/Contents/Info.plist" 2>/dev/null || \
+    /usr/libexec/PlistBuddy -c "Add :NSRequiresAquaSystemAppearance bool true" "${APP_DIR}/Youlin Switcher.app/Contents/Info.plist" 2>/dev/null || true
   echo "  应用已安装到 ~/Applications/"
 fi
 
