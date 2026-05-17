@@ -40,6 +40,7 @@ struct YoulinSwitcherApp: App {
         WindowGroup {
             ContentView(selectedTab: $selectedTab)
                 .frame(minWidth: 1080, minHeight: 760)
+                .preferredColorScheme(.light)
         }
         .windowStyle(.titleBar)
     }
@@ -49,7 +50,6 @@ struct YoulinSwitcherApp: App {
 
 struct ContentView: View {
     @Binding var selectedTab: Int
-    @Environment(\.colorScheme) private var colorScheme
     @State private var currentConfig = ""
     @State private var message = ""
     @State private var selectedTemplate = "custom"
@@ -92,7 +92,6 @@ struct ContentView: View {
         }
         .background(Design.bg)
         .background(WindowBackground())
-        .id(colorScheme)
         .onAppear {
             refresh()
             applyTemplate(templates[0])
@@ -409,7 +408,6 @@ struct ContentView: View {
 
 struct MigrationView: View {
     @Binding var message: String
-    @Environment(\.colorScheme) private var colorScheme
     @State private var threadsByProvider: [String: [ThreadItem]] = [:]
     @State private var providerList: [(id: String, name: String)] = []
     @State private var isLoading = true
@@ -498,7 +496,6 @@ struct MigrationView: View {
             }
         }
         .background(Design.bg)
-        .id(colorScheme)
         .onAppear { loadThreads() }
     }
 
@@ -957,19 +954,17 @@ struct FlowLayout<Content: View>: View {
 // MARK: - Design System
 
 enum Design {
-    static let bg = Color(nsColor: .windowBackgroundColor)
-    static let sidebar = Color(nsColor: .underPageBackgroundColor)
-    static let panel = Color(nsColor: .controlBackgroundColor)
-    static let code = Color(nsColor: .textBackgroundColor)
-    static let chip = Color(nsColor: .quaternaryLabelColor).opacity(0.22)
-    static let row = Color(nsColor: .textBackgroundColor).opacity(0.72)
-    static let stroke = Color(nsColor: .separatorColor).opacity(0.55)
+    static let bg = Color(red: 0.965, green: 0.965, blue: 0.945)
+    static let sidebar = Color(red: 0.941, green: 0.941, blue: 0.925)
+    static let panel = Color.white.opacity(0.82)
+    static let code = Color(red: 0.925, green: 0.925, blue: 0.91)
+    static let chip = Color(red: 0.905, green: 0.905, blue: 0.895)
+    static let row = Color.white.opacity(0.72)
+    static let stroke = Color.black.opacity(0.08)
     static let accent = Color(red: 0.075, green: 0.455, blue: 0.925)
 }
 
 struct WindowBackground: NSViewRepresentable {
-    @Environment(\.colorScheme) private var colorScheme
-
     func makeNSView(context: Context) -> NSView {
         NSView()
     }
@@ -977,9 +972,9 @@ struct WindowBackground: NSViewRepresentable {
     func updateNSView(_ view: NSView, context: Context) {
         DispatchQueue.main.async {
             guard let window = view.window else { return }
-            let background = colorScheme == .dark
-                ? NSColor(calibratedRed: 0.11, green: 0.11, blue: 0.12, alpha: 1)
-                : NSColor(calibratedRed: 0.965, green: 0.965, blue: 0.945, alpha: 1)
+            let background = NSColor(calibratedRed: 0.965, green: 0.965, blue: 0.945, alpha: 1)
+            NSApp.appearance = NSAppearance(named: .aqua)
+            window.appearance = NSAppearance(named: .aqua)
             window.isOpaque = true
             window.backgroundColor = background
             window.contentView?.wantsLayer = true
