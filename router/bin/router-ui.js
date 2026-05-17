@@ -4,8 +4,23 @@ import { fileURLToPath } from "node:url";
 import path from "node:path";
 import os from "node:os";
 import fs from "node:fs";
-import { DatabaseSync } from "node:sqlite";
 import { execSync } from "node:child_process";
+
+// DatabaseSync requires Node.js 22.5+. Lazy-load so the server starts on older Node.
+let _DatabaseSync = null;
+async function getDatabaseSync() {
+  if (_DatabaseSync) return _DatabaseSync;
+  try {
+    const mod = await import("node:sqlite");
+    _DatabaseSync = mod.DatabaseSync;
+    return _DatabaseSync;
+  } catch {
+    throw new Error(
+      `Thread migration requires Node.js 22.5+. You are running ${process.version}. ` +
+      `Please upgrade Node.js at https://nodejs.org — all other Youlin features work fine on Node.js 18+.`
+    );
+  }
+}
 import { ensureDefaultConfig } from "../lib/config.js";
 import { ask, getStatus, setModel, handoff } from "../lib/router.js";
 import { codexConfigPath, listCodexPresets, readCodexTopLevel, saveCustomModel, switchCodexPreset } from "../lib/codex-config.js";
@@ -138,7 +153,8 @@ function json(res, value, status = 200) {
 
 // --- Thread migration helpers ---
 
-function listThreads() {
+async function listThreads() {
+  const DatabaseSync = await getDatabaseSync();
   const db = new DatabaseSync(DB_PATH, { open: true, readOnly: true });
   try {
     const rows = db.prepare(
@@ -190,10 +206,11 @@ function listThreads() {
   }
 }
 
-function migrateThread(threadId, targetProvider) {
+async function migrateThread(threadId, targetProvider) {
   if (!threadId || !targetProvider) throw new Error("threadId and targetProvider are required");
   const targetModel = PROVIDER_DEFAULT_MODELS[targetProvider] || "gpt-5.5";
 
+  const DatabaseSync = await getDatabaseSync();
   // 1. Read current thread info
   const db = new DatabaseSync(DB_PATH, { open: true });
   try {

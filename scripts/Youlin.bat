@@ -10,13 +10,13 @@ set "ROUTER_DIR=%USERPROFILE%\.model-router"
 :: Check if Node.js is available
 where node >nul 2>nul
 if %errorlevel% neq 0 (
-    echo [错误] 未找到 Node.js。请先安装 Node.js：https://nodejs.org
+    echo [Error] Node.js not found. Please install Node.js 18+ from https://nodejs.org
     pause
     exit /b 1
 )
 
 :: Sync program files on every launch. User config files are preserved below.
-echo 同步 Youlin 程序文件...
+echo Syncing Youlin program files...
 mkdir "%ROUTER_DIR%\app\bin" 2>nul
 mkdir "%ROUTER_DIR%\app\lib" 2>nul
 mkdir "%ROUTER_DIR%\app\config" 2>nul
@@ -33,27 +33,27 @@ if not exist "%ROUTER_DIR%\config\secrets.env" copy /Y "%APP_ROOT%\router\config
 :: Keep the installed icon and desktop shortcuts using the blue Youlin icon.
 if exist "%APP_ROOT%\router\bin\youlin.ico" copy /Y "%APP_ROOT%\router\bin\youlin.ico" "%ROUTER_DIR%\app\bin\youlin.ico" >nul
 if exist "%APP_ROOT%\router\bin\youlin.png" copy /Y "%APP_ROOT%\router\bin\youlin.png" "%ROUTER_DIR%\app\bin\youlin.png" >nul
-powershell -NoProfile -ExecutionPolicy Bypass -Command "$desktop=[Environment]::GetFolderPath('Desktop'); $target=Join-Path (Get-Location).Path '启动Youlin.bat'; $icon=Join-Path $env:USERPROFILE '.model-router\app\bin\youlin.ico'; $ws=New-Object -ComObject WScript.Shell; foreach($name in @('Youlin.lnk','Youlin Switcher.lnk')){ $shortcut=Join-Path $desktop $name; $s=$ws.CreateShortcut($shortcut); $s.TargetPath=$target; $s.WorkingDirectory=(Get-Location).Path; if(Test-Path $icon){ $s.IconLocation=$icon }; $s.Description='Youlin Codex Model Switcher'; $s.Save() }; ie4uinit.exe -show" >nul 2>nul
+powershell -NoProfile -ExecutionPolicy Bypass -Command "$desktop=[Environment]::GetFolderPath('Desktop'); $target=Join-Path (Get-Location).Path 'Youlin.bat'; $icon=Join-Path $env:USERPROFILE '.model-router\app\bin\youlin.ico'; $ws=New-Object -ComObject WScript.Shell; foreach($name in @('Youlin.lnk','Youlin Switcher.lnk')){ $shortcut=Join-Path $desktop $name; $s=$ws.CreateShortcut($shortcut); $s.TargetPath=$target; $s.WorkingDirectory=(Get-Location).Path; if(Test-Path $icon){ $s.IconLocation=$icon }; $s.Description='Youlin Codex Model Switcher'; $s.Save() }; ie4uinit.exe -show" >nul 2>nul
 
 :: Start the server in background
-echo 启动 Youlin 服务...
+echo Starting Youlin service...
 powershell -NoProfile -ExecutionPolicy Bypass -Command "try { $r=Invoke-WebRequest -UseBasicParsing -Uri 'http://127.0.0.1:8787/api/status' -TimeoutSec 2; if ($r.StatusCode -eq 200) { exit 0 } } catch { exit 1 }" >nul 2>nul
 if %errorlevel% neq 0 (
     start "Youlin Router" /MIN cmd /c "node ""%ROUTER_DIR%\app\bin\router-ui.js"" --port 8787 >> ""%ROUTER_DIR%\logs\ui.log"" 2>&1"
 )
 
 :: Wait for server to start
-echo 等待服务就绪...
+echo Waiting for service...
 powershell -NoProfile -ExecutionPolicy Bypass -Command "$deadline=(Get-Date).AddSeconds(30); do { Start-Sleep -Milliseconds 500; try { $r=Invoke-WebRequest -UseBasicParsing -Uri 'http://127.0.0.1:8787/api/status' -TimeoutSec 2; if ($r.StatusCode -eq 200) { exit 0 } } catch {} } while ((Get-Date) -lt $deadline); exit 1"
 if %errorlevel% neq 0 (
-    echo [错误] Youlin 服务启动失败。
-    echo 请查看日志: "%ROUTER_DIR%\logs\ui.log"
+    echo [Error] Youlin service failed to start.
+    echo Please check the log: "%ROUTER_DIR%\logs\ui.log"
     pause
     exit /b 1
 )
 
 :: Open desktop app - try Edge app mode first, fallback to default browser
-echo 打开 Youlin 桌面应用...
+echo Opening Youlin desktop app...
 
 :: Try Microsoft Edge in app mode (best native feel)
 start msedge --app=http://127.0.0.1:8787/desktop --new-window >nul 2>nul
@@ -67,6 +67,6 @@ if %errorlevel% equ 0 goto :done
 start http://127.0.0.1:8787/desktop
 
 :done
-echo Youlin 已启动！
-echo 桌面应用: http://127.0.0.1:8787/desktop
-echo 关闭此窗口不会停止 Youlin 服务。
+echo Youlin started!
+echo Desktop app: http://127.0.0.1:8787/desktop
+echo Closing this window will NOT stop the Youlin service.

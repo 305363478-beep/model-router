@@ -23,12 +23,14 @@ set "ROUTER_DIR=%USERPROFILE%\.model-router"
 echo 正在创建目录...
 mkdir "%ROUTER_DIR%\app\bin" 2>nul
 mkdir "%ROUTER_DIR%\app\lib" 2>nul
+mkdir "%ROUTER_DIR%\app\config" 2>nul
 mkdir "%ROUTER_DIR%\config" 2>nul
 mkdir "%ROUTER_DIR%\logs" 2>nul
 
 echo 正在复制文件...
 xcopy /E /Y "%APP_ROOT%\router\bin\*" "%ROUTER_DIR%\app\bin\"
 xcopy /E /Y "%APP_ROOT%\router\lib\*" "%ROUTER_DIR%\app\lib\"
+xcopy /E /Y "%APP_ROOT%\router\config\*" "%ROUTER_DIR%\app\config\"
 copy /Y "%APP_ROOT%\router\codex-mcp.json" "%ROUTER_DIR%"
 
 if not exist "%ROUTER_DIR%\config\models.yaml" copy /Y "%APP_ROOT%\router\config\models.yaml.example" "%ROUTER_DIR%\config\models.yaml"
