@@ -1,5 +1,6 @@
 import SwiftUI
 import Foundation
+import AppKit
 
 // MARK: - Models
 
@@ -48,6 +49,7 @@ struct YoulinSwitcherApp: App {
 
 struct ContentView: View {
     @Binding var selectedTab: Int
+    @Environment(\.colorScheme) private var colorScheme
     @State private var currentConfig = ""
     @State private var message = ""
     @State private var selectedTemplate = "custom"
@@ -89,6 +91,8 @@ struct ContentView: View {
             }
         }
         .background(Design.bg)
+        .background(WindowBackground())
+        .id(colorScheme)
         .onAppear {
             refresh()
             applyTemplate(templates[0])
@@ -104,8 +108,10 @@ struct ContentView: View {
                 }
                 .padding(28)
             }
+            .background(Design.bg)
             footer
         }
+        .background(Design.bg)
     }
 
     var header: some View {
@@ -311,6 +317,7 @@ struct ContentView: View {
         .padding(.horizontal, 28)
         .padding(.vertical, 12)
         .background(Design.panel)
+        .overlay(Rectangle().frame(height: 1).foregroundColor(Design.stroke), alignment: .top)
     }
 
     func refresh() {
@@ -402,6 +409,7 @@ struct ContentView: View {
 
 struct MigrationView: View {
     @Binding var message: String
+    @Environment(\.colorScheme) private var colorScheme
     @State private var threadsByProvider: [String: [ThreadItem]] = [:]
     @State private var providerList: [(id: String, name: String)] = []
     @State private var isLoading = true
@@ -489,6 +497,8 @@ struct MigrationView: View {
                     }
             }
         }
+        .background(Design.bg)
+        .id(colorScheme)
         .onAppear { loadThreads() }
     }
 
@@ -955,6 +965,27 @@ enum Design {
     static let row = Color(nsColor: .textBackgroundColor).opacity(0.72)
     static let stroke = Color(nsColor: .separatorColor).opacity(0.55)
     static let accent = Color(red: 0.075, green: 0.455, blue: 0.925)
+}
+
+struct WindowBackground: NSViewRepresentable {
+    @Environment(\.colorScheme) private var colorScheme
+
+    func makeNSView(context: Context) -> NSView {
+        NSView()
+    }
+
+    func updateNSView(_ view: NSView, context: Context) {
+        DispatchQueue.main.async {
+            guard let window = view.window else { return }
+            let background = colorScheme == .dark
+                ? NSColor(calibratedRed: 0.11, green: 0.11, blue: 0.12, alpha: 1)
+                : NSColor(calibratedRed: 0.965, green: 0.965, blue: 0.945, alpha: 1)
+            window.isOpaque = true
+            window.backgroundColor = background
+            window.contentView?.wantsLayer = true
+            window.contentView?.layer?.backgroundColor = background.cgColor
+        }
+    }
 }
 
 // MARK: - Paths & Config
