@@ -116,7 +116,7 @@ jobs:
           npm install @playwright/test --save-dev
           npx playwright install chromium --with-deps
 
-      - name: Start Youlin server
+      - name: Start server + Run Playwright UI tests
         run: |
           Start-Process -NoNewWindow -FilePath "node" -ArgumentList "router/bin/router-ui.js","--port","8787"
           for ($i=0; $i -lt 10; $i++) {
@@ -126,9 +126,7 @@ jobs:
           # Assert server actually started
           $status = Invoke-WebRequest "http://127.0.0.1:8787/api/status" -UseBasicParsing -TimeoutSec 5
           if ($status.StatusCode -ne 200) { throw "Server did not start" }
-
-      - name: Run Playwright UI tests
-        run: npx playwright test tests/youlin-ui.spec.mjs --reporter=list
+          npx playwright test tests/youlin-ui.spec.mjs --reporter=list
 
       - name: Upload screenshots
         if: always()
