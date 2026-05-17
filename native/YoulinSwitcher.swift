@@ -326,8 +326,10 @@ struct ContentView: View {
     func applyTemplate(_ template: ProviderTemplate) {
         providerName = template.name
         website = template.website
+        apiKey = ""
         baseURL = template.baseURL
         modelName = template.model
+        fetchedModels = ""
         if template.id == "openai" {
             note = "官方账号"
         } else if template.id == "deepseek" || template.id == "qwen" {
