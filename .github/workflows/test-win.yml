@@ -21,7 +21,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
-        with: { node-version: '20' }
+        with: { node-version: '22' }
 
       - name: Batch scripts check
         shell: pwsh
@@ -78,6 +78,9 @@ jobs:
             try { Invoke-WebRequest "http://127.0.0.1:8787/api/status" -UseBasicParsing -TimeoutSec 2 | Out-Null; Write-Host "Server UP"; break }
             catch { Start-Sleep 1 }
           }
+          # Assert server actually started
+          $status = Invoke-WebRequest "http://127.0.0.1:8787/api/status" -UseBasicParsing -TimeoutSec 5
+          if ($status.StatusCode -ne 200) { throw "Server did not start" }
 
   # ==================== Playwright UI 测试 ====================
   ui:
@@ -86,7 +89,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
-        with: { node-version: '20' }
+        with: { node-version: '22' }
 
       - name: Setup mock Codex config
         shell: pwsh
@@ -120,6 +123,9 @@ jobs:
             try { Invoke-WebRequest "http://127.0.0.1:8787/api/status" -UseBasicParsing -TimeoutSec 2 | Out-Null; Write-Host "Server UP"; break }
             catch { Write-Host "Waiting..."; Start-Sleep 1 }
           }
+          # Assert server actually started
+          $status = Invoke-WebRequest "http://127.0.0.1:8787/api/status" -UseBasicParsing -TimeoutSec 5
+          if ($status.StatusCode -ne 200) { throw "Server did not start" }
 
       - name: Run Playwright UI tests
         run: npx playwright test tests/youlin-ui.spec.mjs --reporter=list
