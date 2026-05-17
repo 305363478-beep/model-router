@@ -52,16 +52,24 @@ if %errorlevel% neq 0 (
     exit /b 1
 )
 
-:: Open desktop app - try Edge app mode first, fallback to default browser
+:: Open desktop app - try Edge/Chrome app mode (no address bar), fallback to browser
 echo Opening Youlin desktop app...
 
-:: Try Microsoft Edge in app mode (best native feel)
-start msedge --app=http://127.0.0.1:8787/desktop --new-window >nul 2>nul
-if %errorlevel% equ 0 goto :done
+:: Try Microsoft Edge by full path (pre-installed on Windows 10/11)
+set "_EDGE=%ProgramFiles(x86)%\Microsoft\Edge\Application\msedge.exe"
+if not exist "%_EDGE%" set "_EDGE=%ProgramFiles%\Microsoft\Edge\Application\msedge.exe"
+if exist "%_EDGE%" (
+    start "" "%_EDGE%" --app=http://127.0.0.1:8787/desktop --new-window
+    goto :done
+)
 
-:: Try Google Chrome in app mode
-start chrome --app=http://127.0.0.1:8787/desktop --new-window >nul 2>nul
-if %errorlevel% equ 0 goto :done
+:: Try Google Chrome by full path
+set "_CHROME=%ProgramFiles%\Google\Chrome\Application\chrome.exe"
+if not exist "%_CHROME%" set "_CHROME=%ProgramFiles(x86)%\Google\Chrome\Application\chrome.exe"
+if exist "%_CHROME%" (
+    start "" "%_CHROME%" --app=http://127.0.0.1:8787/desktop --new-window
+    goto :done
+)
 
 :: Fallback: open in default browser
 start http://127.0.0.1:8787/desktop
