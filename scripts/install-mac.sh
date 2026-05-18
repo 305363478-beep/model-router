@@ -51,8 +51,13 @@ mkdir -p "${HOME_DIR}/Library/LaunchAgents"
 
 if [ -z "${MIMO2CODEX_PATH}" ] && [ -n "${NPM_PATH}" ]; then
   echo "  安装本地模型代理 mimo2codex..."
-  npm install -g mimo2codex >/dev/null 2>&1 || true
+  npm install -g mimo2codex@0.2.15 >/dev/null 2>&1 || true
   MIMO2CODEX_PATH=$(command -v mimo2codex || true)
+fi
+
+if [ -n "${MIMO2CODEX_PATH}" ] && [ -n "${NPM_PATH}" ]; then
+  npm install -g mimo2codex@0.2.15 >/dev/null 2>&1 || true
+  node "${ROUTER_DIR}/app/bin/patch-mimo2codex-gemini.js" >/dev/null 2>&1 || true
 fi
 
 cat > "${PLIST_PATH}" << PLISTXML

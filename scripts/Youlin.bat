@@ -39,11 +39,14 @@ if %errorlevel% neq 0 (
     where npm >nul 2>nul
     if %errorlevel% equ 0 (
         echo Installing local model proxy...
-        call npm install -g mimo2codex >nul 2>nul
+        call npm install -g mimo2codex@0.2.15 >nul 2>nul
     )
 )
 where mimo2codex >nul 2>nul
 if %errorlevel% equ 0 (
+    where npm >nul 2>nul
+    if %errorlevel% equ 0 call npm install -g mimo2codex@0.2.15 >nul 2>nul
+    node "%ROUTER_DIR%\app\bin\patch-mimo2codex-gemini.js" >nul 2>nul
     if defined DEEPSEEK_API_KEY (
         powershell -NoProfile -ExecutionPolicy Bypass -Command "try { $r=Invoke-WebRequest -UseBasicParsing -Uri 'http://127.0.0.1:8788/v1/models' -TimeoutSec 2; if ($r.StatusCode -eq 200) { exit 0 } } catch { exit 1 }" >nul 2>nul
         if errorlevel 1 start "Youlin DeepSeek Proxy" /MIN cmd /c "mimo2codex --model ds --port 8788 --no-admin >> ""%ROUTER_DIR%\logs\deepseek-v4pro-8788.log"" 2>&1"
