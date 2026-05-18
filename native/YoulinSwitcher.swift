@@ -24,6 +24,7 @@ let templates: [ProviderTemplate] = [
     ProviderTemplate(id: "custom", name: "自定义配置", baseURL: "", model: "", website: ""),
     ProviderTemplate(id: "openai", name: "OpenAI Official", baseURL: "https://api.openai.com/v1", model: "gpt-5.5", website: "https://platform.openai.com"),
     ProviderTemplate(id: "deepseek", name: "DeepSeek", baseURL: "http://127.0.0.1:8788/v1", model: "deepseek-v4-pro", website: "https://api-docs.deepseek.com"),
+    ProviderTemplate(id: "gemini", name: "Gemini", baseURL: "http://127.0.0.1:8790/v1", model: "gemini-2.5-flash", website: "https://ai.google.dev/gemini-api/docs/openai"),
     ProviderTemplate(id: "qwen", name: "Qwen", baseURL: "http://127.0.0.1:8789/v1", model: "qwen3.6-plus", website: "https://bailian.console.aliyun.com"),
     ProviderTemplate(id: "openrouter", name: "OpenRouter", baseURL: "https://openrouter.ai/api/v1", model: "openai/gpt-5", website: "https://openrouter.ai"),
     ProviderTemplate(id: "kimi", name: "Kimi", baseURL: "https://api.moonshot.cn/v1", model: "kimi-k2-0711-preview", website: "https://platform.moonshot.cn"),
@@ -190,6 +191,7 @@ struct ContentView: View {
                     .font(.system(size: 13, weight: .semibold))
                     .foregroundColor(.secondary)
                 SidebarAction(title: "DeepSeek V4 Pro", subtitle: "本地 8788 代理", symbol: "bolt.fill") { quickSwitch(.deepseek) }
+                SidebarAction(title: "Gemini 2.5 Flash", subtitle: "本地 8790 代理", symbol: "sparkles") { quickSwitch(.gemini) }
                 SidebarAction(title: "GPT-5.5", subtitle: "OpenAI 官方", symbol: "sparkles") { quickSwitch(.gpt) }
                 SidebarAction(title: "Qwen 3.6 Plus", subtitle: "本地 8789 代理", symbol: "circle.hexagongrid.fill") { quickSwitch(.qwen) }
             }
@@ -673,7 +675,10 @@ enum MigrationManager {
     static let providerDefaultModels = [
         "openai": "gpt-5.5",
         "mimo2codex": "deepseek-v4-pro",
-        "mimo2codex-qwen": "qwen3.6-plus"
+        "mimo2codex-qwen": "qwen3.6-plus",
+        "mimo2codex-gemini": "gemini-2.5-flash",
+        "youlin-deepseek": "deepseek-v4-pro",
+        "youlin-gemini": "gemini-2.5-flash"
     ]
 
     static func loadThreads() -> (providers: [(id: String, name: String)], threads: [String: [ThreadItem]]) {
@@ -999,6 +1004,7 @@ enum Paths {
 enum ConfigManager {
     enum Preset {
         case deepseek
+        case gemini
         case gpt
         case qwen
     }
@@ -1008,7 +1014,7 @@ enum ConfigManager {
         var lines: [String] = []
         for line in text.components(separatedBy: .newlines) {
             if line.trimmingCharacters(in: .whitespaces).hasPrefix("[") { break }
-            if line.range(of: #"^\s*(model|model_provider|model_context_window|model_reasoning_effort)\s*="#, options: .regularExpression) != nil {
+            if line.range(of: #"^\s*(model|model_provider|model_context_window|model_max_output_tokens|model_reasoning_effort)\s*="#, options: .regularExpression) != nil {
                 lines.append(line)
             }
         }
@@ -1023,10 +1029,22 @@ enum ConfigManager {
                 lines: [
                     #"model = "deepseek-v4-pro""#,
                     #"model_provider = "mimo2codex""#,
-                    "model_context_window = 128000",
+                    "model_context_window = 1000000",
+                    "model_max_output_tokens = 393216",
                     #"model_reasoning_effort = "medium""#
                 ],
                 provider: ProviderBlock(id: "mimo2codex", name: "DeepSeek V4 Pro", baseURL: "http://127.0.0.1:8788/v1")
+            )
+        case .gemini:
+            return try switchTop(
+                label: "Gemini 2.5 Flash",
+                lines: [
+                    #"model = "gemini-2.5-flash""#,
+                    #"model_provider = "mimo2codex-gemini""#,
+                    "model_context_window = 1000000",
+                    #"model_reasoning_effort = "medium""#
+                ],
+                provider: ProviderBlock(id: "mimo2codex-gemini", name: "Gemini 2.5 Flash", baseURL: "http://127.0.0.1:8790/v1")
             )
         case .gpt:
             return try switchTop(
@@ -1091,7 +1109,7 @@ enum ConfigManager {
         let head = all[..<firstTable].filter { line in
             let trimmed = line.trimmingCharacters(in: .whitespacesAndNewlines)
             if trimmed.isEmpty { return false }
-            return line.range(of: #"^\s*(model|model_provider|model_context_window|model_reasoning_effort)\s*="#, options: .regularExpression) == nil
+            return line.range(of: #"^\s*(model|model_provider|model_context_window|model_max_output_tokens|model_reasoning_effort)\s*="#, options: .regularExpression) == nil
         }
         let tail = Array(all[firstTable...])
         var next = (lines + head + [""] + tail).joined(separator: "\n")

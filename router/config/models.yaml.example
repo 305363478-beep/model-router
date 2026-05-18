@@ -11,6 +11,13 @@ models:
     base_url: https://api.deepseek.com/v1
     api_key_env: DEEPSEEK_API_KEY
 
+  youlin-deepseek:
+    label: "DeepSeek V4 Pro"
+    provider: openai-compatible
+    model: deepseek-v4-pro
+    base_url: http://127.0.0.1:8788/v1
+    api_key_env: DEEPSEEK_API_KEY
+
   qwen:
     provider: openai-compatible
     model: qwen-plus
@@ -34,3 +41,10 @@ models:
     provider: ollama
     model: qwen2.5-coder
     base_url: http://localhost:11434
+
+  youlin-gemini:
+    label: "Gemini"
+    provider: openai-compatible
+    model: gemini-2.5-flash
+    base_url: http://127.0.0.1:8790/v1
+    api_key_env: GEMINI_API_KEY

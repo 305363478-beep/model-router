@@ -13,6 +13,7 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 # Create directories
 mkdir -p "${ROUTER_DIR}/app/bin"
 mkdir -p "${ROUTER_DIR}/app/lib"
+mkdir -p "${ROUTER_DIR}/app/config"
 mkdir -p "${ROUTER_DIR}/config"
 mkdir -p "${ROUTER_DIR}/logs"
 mkdir -p "${APP_DIR}"
@@ -20,6 +21,7 @@ mkdir -p "${APP_DIR}"
 echo "[1/4] 安装模型路由..."
 cp -R "${SCRIPT_DIR}/router/bin/"* "${ROUTER_DIR}/app/bin/"
 cp -R "${SCRIPT_DIR}/router/lib/"* "${ROUTER_DIR}/app/lib/"
+cp -R "${SCRIPT_DIR}/router/config/"* "${ROUTER_DIR}/app/config/"
 cp "${SCRIPT_DIR}/router/codex-mcp.json" "${ROUTER_DIR}/"
 chmod +x "${ROUTER_DIR}/app/bin/"*.js
 
@@ -43,7 +45,15 @@ fi
 echo "[4/4] 配置开机自启动..."
 PLIST_PATH="${HOME_DIR}/Library/LaunchAgents/com.youlin.router-ui.plist"
 NODE_PATH=$(which node)
+NPM_PATH=$(command -v npm || true)
+MIMO2CODEX_PATH=$(command -v mimo2codex || true)
 mkdir -p "${HOME_DIR}/Library/LaunchAgents"
+
+if [ -z "${MIMO2CODEX_PATH}" ] && [ -n "${NPM_PATH}" ]; then
+  echo "  安装本地模型代理 mimo2codex..."
+  npm install -g mimo2codex >/dev/null 2>&1 || true
+  MIMO2CODEX_PATH=$(command -v mimo2codex || true)
+fi
 
 cat > "${PLIST_PATH}" << PLISTXML
 <?xml version="1.0" encoding="UTF-8"?>
@@ -74,6 +84,68 @@ PLISTXML
 launchctl unload "${PLIST_PATH}" 2>/dev/null || true
 launchctl load "${PLIST_PATH}"
 echo "  开机自启动已配置"
+
+if [ -n "${MIMO2CODEX_PATH}" ]; then
+  DEEPSEEK_PLIST="${HOME_DIR}/Library/LaunchAgents/com.youlin.deepseek-v4pro.plist"
+  cat > "${DEEPSEEK_PLIST}" << PLISTXML
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.youlin.deepseek-v4pro</string>
+    <key>ProgramArguments</key>
+    <array>
+        <string>/bin/bash</string>
+        <string>-lc</string>
+        <string>set -a; . "${ROUTER_DIR}/config/secrets.env" 2>/dev/null || true; set +a; if [ -z "\${DEEPSEEK_API_KEY:-}" ]; then echo "DEEPSEEK_API_KEY is empty; proxy idle"; sleep 3600; exit 0; fi; exec "${MIMO2CODEX_PATH}" --model ds --port 8788 --no-admin</string>
+    </array>
+    <key>RunAtLoad</key>
+    <true/>
+    <key>KeepAlive</key>
+    <true/>
+    <key>StandardOutPath</key>
+    <string>${ROUTER_DIR}/logs/deepseek-v4pro-8788.log</string>
+    <key>StandardErrorPath</key>
+    <string>${ROUTER_DIR}/logs/deepseek-v4pro-8788.err.log</string>
+</dict>
+</plist>
+PLISTXML
+
+  GEMINI_PLIST="${HOME_DIR}/Library/LaunchAgents/com.youlin.gemini2codex.plist"
+  cat > "${GEMINI_PLIST}" << PLISTXML
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.youlin.gemini2codex</string>
+    <key>ProgramArguments</key>
+    <array>
+        <string>/bin/bash</string>
+        <string>-lc</string>
+        <string>set -a; . "${ROUTER_DIR}/config/secrets.env" 2>/dev/null || true; set +a; if [ -z "\${GEMINI_API_KEY:-}" ]; then echo "GEMINI_API_KEY is empty; proxy idle"; sleep 3600; exit 0; fi; export GENERIC_BASE_URL="https://generativelanguage.googleapis.com/v1beta/openai"; export GENERIC_API_KEY="\${GEMINI_API_KEY}"; export GENERIC_DEFAULT_MODEL="gemini-2.5-flash"; exec "${MIMO2CODEX_PATH}" --model generic --port 8790 --no-admin</string>
+    </array>
+    <key>RunAtLoad</key>
+    <true/>
+    <key>KeepAlive</key>
+    <true/>
+    <key>StandardOutPath</key>
+    <string>${ROUTER_DIR}/logs/gemini2codex.log</string>
+    <key>StandardErrorPath</key>
+    <string>${ROUTER_DIR}/logs/gemini2codex.err.log</string>
+</dict>
+</plist>
+PLISTXML
+
+  launchctl unload "${DEEPSEEK_PLIST}" 2>/dev/null || true
+  launchctl unload "${GEMINI_PLIST}" 2>/dev/null || true
+  launchctl load "${DEEPSEEK_PLIST}" 2>/dev/null || true
+  launchctl load "${GEMINI_PLIST}" 2>/dev/null || true
+  echo "  DeepSeek/Gemini 本地代理已配置"
+else
+  echo "  未找到 mimo2codex；填写 API Key 后请执行: npm install -g mimo2codex"
+fi
 
 echo ""
 echo "╔════════════════════════════════════╗"

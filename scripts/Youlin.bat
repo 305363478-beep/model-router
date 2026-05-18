@@ -30,6 +30,30 @@ if not exist "%ROUTER_DIR%\config\models.yaml" copy /Y "%APP_ROOT%\router\config
 if not exist "%ROUTER_DIR%\config\policy.yaml" copy /Y "%APP_ROOT%\router\config\policy.yaml.example" "%ROUTER_DIR%\config\policy.yaml" >nul
 if not exist "%ROUTER_DIR%\config\secrets.env" copy /Y "%APP_ROOT%\router\config\secrets.env.example" "%ROUTER_DIR%\config\secrets.env" >nul
 
+:: Load API keys and make sure local model proxy exists.
+for /f "usebackq tokens=1,* delims==" %%A in ("%ROUTER_DIR%\config\secrets.env") do (
+    if not "%%A"=="" set "%%A=%%B"
+)
+where mimo2codex >nul 2>nul
+if %errorlevel% neq 0 (
+    where npm >nul 2>nul
+    if %errorlevel% equ 0 (
+        echo Installing local model proxy...
+        call npm install -g mimo2codex >nul 2>nul
+    )
+)
+where mimo2codex >nul 2>nul
+if %errorlevel% equ 0 (
+    if defined DEEPSEEK_API_KEY (
+        powershell -NoProfile -ExecutionPolicy Bypass -Command "try { $r=Invoke-WebRequest -UseBasicParsing -Uri 'http://127.0.0.1:8788/v1/models' -TimeoutSec 2; if ($r.StatusCode -eq 200) { exit 0 } } catch { exit 1 }" >nul 2>nul
+        if errorlevel 1 start "Youlin DeepSeek Proxy" /MIN cmd /c "mimo2codex --model ds --port 8788 --no-admin >> ""%ROUTER_DIR%\logs\deepseek-v4pro-8788.log"" 2>&1"
+    )
+    if defined GEMINI_API_KEY (
+        powershell -NoProfile -ExecutionPolicy Bypass -Command "try { $r=Invoke-WebRequest -UseBasicParsing -Uri 'http://127.0.0.1:8790/v1/models' -TimeoutSec 2; if ($r.StatusCode -eq 200) { exit 0 } } catch { exit 1 }" >nul 2>nul
+        if errorlevel 1 start "Youlin Gemini Proxy" /MIN cmd /c "set GENERIC_BASE_URL=https://generativelanguage.googleapis.com/v1beta/openai&& set GENERIC_API_KEY=%GEMINI_API_KEY%&& set GENERIC_DEFAULT_MODEL=gemini-2.5-flash&& mimo2codex --model generic --port 8790 --no-admin >> ""%ROUTER_DIR%\logs\gemini2codex.log"" 2>&1"
+    )
+)
+
 :: Keep the installed icon and desktop shortcuts using the blue Youlin icon.
 if exist "%APP_ROOT%\router\bin\youlin.ico" copy /Y "%APP_ROOT%\router\bin\youlin.ico" "%ROUTER_DIR%\app\bin\youlin.ico" >nul
 if exist "%APP_ROOT%\router\bin\youlin.png" copy /Y "%APP_ROOT%\router\bin\youlin.png" "%ROUTER_DIR%\app\bin\youlin.png" >nul

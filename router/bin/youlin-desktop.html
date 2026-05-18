@@ -442,6 +442,13 @@ body {
       <div class="quick-switch-desc">本地 8788 代理</div>
     </div>
   </div>
+  <div class="quick-switch-btn" onclick="quickSwitch('gemini')">
+    <div class="quick-switch-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l1.8 6.2L20 10l-6.2 1.8L12 18l-1.8-6.2L4 10l6.2-1.8L12 2z"/><path d="M19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8L19 15z"/></svg></div>
+    <div class="quick-switch-info">
+      <div class="quick-switch-name">Gemini 2.5 Flash</div>
+      <div class="quick-switch-desc">本地 8790 代理</div>
+    </div>
+  </div>
   <div class="quick-switch-btn" onclick="quickSwitch('gpt')">
     <div class="quick-switch-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L15 9H22L16 14L19 21L12 16L5 21L8 14L2 9H9L12 2Z"/></svg></div>
     <div class="quick-switch-info">
@@ -578,6 +585,7 @@ const templates = [
   { id: 'custom', name: '自定义配置', baseURL: '', model: '', website: '', note: '' },
   { id: 'openai', name: 'OpenAI Official', baseURL: 'https://api.openai.com/v1', model: 'gpt-5.5', website: 'https://platform.openai.com', note: '官方账号' },
   { id: 'deepseek', name: 'DeepSeek', baseURL: 'http://127.0.0.1:8788/v1', model: 'deepseek-v4-pro', website: 'https://api-docs.deepseek.com', note: '本地代理' },
+  { id: 'gemini', name: 'Gemini', baseURL: 'http://127.0.0.1:8790/v1', model: 'gemini-2.5-flash', website: 'https://ai.google.dev/gemini-api/docs/openai', note: '本地代理' },
   { id: 'qwen', name: 'Qwen', baseURL: 'http://127.0.0.1:8789/v1', model: 'qwen3.6-plus', website: 'https://bailian.console.aliyun.com', note: '本地代理' },
   { id: 'openrouter', name: 'OpenRouter', baseURL: 'https://openrouter.ai/api/v1', model: 'openai/gpt-5', website: 'https://openrouter.ai', note: '' },
   { id: 'kimi', name: 'Kimi', baseURL: 'https://api.moonshot.cn/v1', model: 'kimi-k2-0711-preview', website: 'https://platform.moonshot.cn', note: '' },

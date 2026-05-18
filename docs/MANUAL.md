@@ -45,6 +45,7 @@
 ```bash
 # 示例
 DEEPSEEK_API_KEY=sk-your-deepseek-key
+GEMINI_API_KEY=your-gemini-key
 QWEN_API_KEY=sk-your-qwen-key
 ANTHROPIC_API_KEY=sk-ant-your-claude-key
 ```

@@ -35,7 +35,10 @@ await ensureDefaultConfig(cwd);
 const PROVIDER_DEFAULT_MODELS = {
   openai: "gpt-5.5",
   mimo2codex: "deepseek-v4-pro",
-  "mimo2codex-qwen": "qwen3.6-plus"
+  "mimo2codex-qwen": "qwen3.6-plus",
+  "mimo2codex-gemini": "gemini-2.5-flash",
+  "youlin-deepseek": "deepseek-v4-pro",
+  "youlin-gemini": "gemini-2.5-flash"
 };
 
 const server = http.createServer(async (req, res) => {
@@ -577,6 +580,7 @@ function desktopHtml(res, headOnly = false) {
 async function quickSwitchDesktop(target) {
   const presetMap = {
     deepseek: "deepseek-v4-pro",
+    gemini: "gemini",
     gpt: "gpt",
     qwen: "qwen",
   };

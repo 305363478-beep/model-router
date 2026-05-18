@@ -12,7 +12,7 @@ export async function readCodexTopLevel() {
   const output = [];
   for (const line of text.split(/\r?\n/)) {
     if (line.trimStart().startsWith("[")) break;
-    if (/^\s*(model|model_provider|model_context_window|model_reasoning_effort)\s*=/.test(line)) {
+    if (/^\s*(model|model_provider|model_context_window|model_max_output_tokens|model_reasoning_effort)\s*=/.test(line)) {
       output.push(line);
     }
   }
@@ -33,7 +33,7 @@ export async function switchCodexPreset(preset) {
   const preservedHead = head.filter((line) => {
     const trimmed = line.trim();
     if (!trimmed) return false;
-    return !/^(model|model_provider|model_context_window|model_reasoning_effort)\s*=/.test(trimmed);
+    return !/^(model|model_provider|model_context_window|model_max_output_tokens|model_reasoning_effort)\s*=/.test(trimmed);
   });
 
   let next = [
@@ -54,7 +54,8 @@ export async function listCodexPresets() {
     { id: "deepseek-v4-pro", label: "DeepSeek V4 Pro" },
     { id: "deepseek-chat", label: "DeepSeek Chat" },
     { id: "gpt", label: "GPT-5.5" },
-    { id: "qwen", label: "Qwen 3.6 Plus" }
+    { id: "qwen", label: "Qwen 3.6 Plus" },
+    { id: "gemini", label: "Gemini 2.5 Flash" }
   ];
   const custom = Object.entries(models)
     .filter(([, cfg]) => cfg.provider === "openai-compatible")
@@ -100,11 +101,12 @@ function presetLines(preset, models) {
       providerId: "mimo2codex",
       providerName: "DeepSeek V4 Pro",
       baseUrl: "http://127.0.0.1:8788/v1",
-      contextWindow: 128000,
+      contextWindow: 1000000,
       lines: [
         'model = "deepseek-v4-pro"',
         'model_provider = "mimo2codex"',
-        "model_context_window = 128000",
+        "model_context_window = 1000000",
+        "model_max_output_tokens = 393216",
         'model_reasoning_effort = "medium"'
       ]
     };
@@ -115,11 +117,12 @@ function presetLines(preset, models) {
       providerId: "mimo2codex",
       providerName: "DeepSeek V4 Pro",
       baseUrl: "http://127.0.0.1:8788/v1",
-      contextWindow: 128000,
+      contextWindow: 1000000,
       lines: [
         'model = "deepseek-chat"',
         'model_provider = "mimo2codex"',
-        "model_context_window = 128000",
+        "model_context_window = 1000000",
+        "model_max_output_tokens = 393216",
         'model_reasoning_effort = "medium"'
       ]
     };
@@ -135,6 +138,21 @@ function presetLines(preset, models) {
         'model = "qwen3.6-plus"',
         'model_provider = "mimo2codex-qwen"',
         "model_context_window = 128000",
+        'model_reasoning_effort = "medium"'
+      ]
+    };
+  }
+  if (preset === "gemini") {
+    return {
+      label: "Gemini 2.5 Flash",
+      providerId: "mimo2codex-gemini",
+      providerName: "Gemini 2.5 Flash",
+      baseUrl: "http://127.0.0.1:8790/v1",
+      contextWindow: 1000000,
+      lines: [
+        'model = "gemini-2.5-flash"',
+        'model_provider = "mimo2codex-gemini"',
+        "model_context_window = 1000000",
         'model_reasoning_effort = "medium"'
       ]
     };

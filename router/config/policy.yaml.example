@@ -1,8 +1,9 @@
 default_mode: manual
-sticky_model: deepseek
+sticky_model: youlin-deepseek
 manual_aliases:
   gpt: gpt
-  deepseek: deepseek
+  deepseek: youlin-deepseek
+  gemini: youlin-gemini
   qwen: qwen
   claude: claude_api
   claude-code: claude_code
@@ -17,9 +18,9 @@ auto:
   security_review:
     model: gpt
   implementation:
-    model: deepseek
+    model: youlin-deepseek
   tests:
-    model: deepseek
+    model: youlin-deepseek
   summarization:
     model: qwen
   long_context_scan:
@@ -27,7 +28,8 @@ auto:
   cheap_task:
     model: local
 fallback:
-  - deepseek
+  - youlin-deepseek
+  - youlin-gemini
   - qwen
   - claude_code
   - local

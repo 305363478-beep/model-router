@@ -3,7 +3,7 @@
 一键切换 Codex Desktop 底层模型。GPT 用完了？切 DeepSeek。DeepSeek 慢了？切 Claude Code。聊天记录自动保留，迁移随心。
 
 **支持平台**: macOS 原生应用 + Windows 网页版  
-**支持模型**: GPT / DeepSeek / Claude Code / Qwen / 任意 OpenAI 兼容 API
+**支持模型**: GPT / DeepSeek / Gemini / Claude Code / Qwen / 任意 OpenAI 兼容 API
 
 ---
 
@@ -111,6 +111,7 @@ model-router/
 ```bash
 OPENAI_API_KEY=sk-xxx           # GPT
 DEEPSEEK_API_KEY=sk-xxx         # DeepSeek
+GEMINI_API_KEY=AIza-xxx          # Gemini
 ANTHROPIC_API_KEY=sk-ant-xxx    # Claude Code
 QWEN_API_KEY=sk-xxx             # Qwen
 ```
