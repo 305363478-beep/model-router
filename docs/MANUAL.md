@@ -138,6 +138,78 @@ A:
 - macOS: 检查 launchd 服务是否运行。终端执行 `lsof -i :8787`
 - Windows: 确保启动了 `启动Youlin.bat`
 
+**Q: Gemini 切换后 Codex 报 `502 Bad Gateway`？**
+A: Gemini 不是由 Codex 直接请求 Google API。Youlin 会启动本地 `mimo2codex` 代理，把 Codex 的 Responses API 请求转换为 Gemini OpenAI-compatible 请求。
+
+默认链路：
+
+```text
+Codex -> http://localhost:8790/v1/responses -> mimo2codex -> Gemini API
+```
+
+请确认：
+
+- Youlin 的 Gemini 本地代理正在监听 `8790`
+- Codex 配置里的 Gemini `base_url` 是 `http://localhost:8790/v1`
+- 模型名使用 Google 当前可用的 API ID，例如 `gemini-3.1-pro-preview`
+- `localhost`、`127.0.0.1`、`::1` 没有被系统代理或 TUN 代理接管
+
+macOS 检查端口：
+
+```bash
+lsof -i :8790
+```
+
+Windows 检查端口：
+
+```powershell
+Get-NetTCPConnection -LocalPort 8790
+```
+
+或：
+
+```powershell
+netstat -ano | findstr :8790
+```
+
+如果开启了 Clash / FlClash / Clash Verge / Mihomo / Surge 等代理工具，请添加本地地址直连规则。
+
+通用直连地址：
+
+```text
+localhost
+127.0.0.1
+::1
+```
+
+Clash/Mihomo 规则示例：
+
+```text
+DOMAIN,localhost,DIRECT
+IP-CIDR,127.0.0.0/8,DIRECT,no-resolve
+IP-CIDR6,::1/128,DIRECT,no-resolve
+```
+
+macOS TUN 模式还需要排除 loopback 路由：
+
+```text
+127.0.0.0/8
+::1/128
+```
+
+Windows 系统代理绕过列表可以加入：
+
+```text
+localhost;127.*;::1;<local>
+```
+
+也可以给 Youlin/Codex 进程设置：
+
+```text
+NO_PROXY=localhost,127.0.0.1,::1
+no_proxy=localhost,127.0.0.1,::1
+```
+
 **Q: 如何卸载？**
 A:
 - macOS: 删除 `~/.model-router/` 目录，删除 `~/Library/LaunchAgents/com.youlin.router-ui.plist`，然后执行 `launchctl unload ~/Library/LaunchAgents/com.youlin.router-ui.plist`

@@ -152,6 +152,23 @@ MCP 集成后，直接在对话框中说：
 **切换后聊天记录不见了？**  
 用「线程迁移」功能把记录搬到新模型下。
 
+**Gemini 报 `502 Bad Gateway`？**  
+Gemini 需要通过本地 `mimo2codex` 代理接入 Codex，Codex 访问的是 `http://localhost:8790/v1`，不是直接访问 Google API。请确认 Youlin 已启动 8790 代理，并且 Clash / FlClash / Mihomo / Clash Verge / Surge 等代理工具没有接管 `localhost`、`127.0.0.1`、`::1`。
+
+macOS 使用 TUN 时，需要让 `127.0.0.0/8` 和 `::1/128` 直连。Windows 也可能遇到同类问题，需要在系统代理或 TUN 规则里加入本地地址直连：
+
+```text
+localhost
+127.0.0.1
+::1
+```
+
+推荐的 Gemini 模型名示例：
+
+```text
+gemini-3.1-pro-preview
+```
+
 **网页打不开？**  
 macOS: `lsof -i :8787` 检查端口。Windows: 确保 `启动Youlin.bat` 在运行。
 
